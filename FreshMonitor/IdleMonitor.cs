@@ -1,13 +1,15 @@
 ﻿using System.Threading;
 using System;
+using System.Drawing;
+using System.Windows.Forms;
 
 namespace FreshMonitor
 {
     class IdleMonitor
     {
-        private bool isIdle = false;
         private TimeSpan idleTime;
         private DateTime lastCheckTime;
+        private Point lastMousePos;
 
         private const int DEFAULT_CHECK_INTERVAL = 60;
         private const int DEFAULT_PREVENTION_ACTION_INTERVAL = 13;
@@ -59,10 +61,10 @@ namespace FreshMonitor
                 {
                     if (IsComputerIdle())
                     {
-                        idleTime.Add(DateTime.Now - lastCheckTime);
+                        idleTime = idleTime.Add(DateTime.Now.Subtract(lastCheckTime));
                         
                         //if idle for too long
-                        if(idleTime.Minutes>=idlePreventionActionInterval)
+                        if(idleTime.TotalMinutes>=idlePreventionActionInterval)
                             DoIdlePreventionAction();
                     }
                     else
@@ -81,16 +83,23 @@ namespace FreshMonitor
 
         private bool IsComputerIdle()
         {
-            //TODO STUB
-            return true;
+            bool result = false;
+            if (lastMousePos.Equals(Cursor.Position))
+                result = true;
+            lastMousePos = Cursor.Position;
+            return result;
         }
 
         /// <summary>
-        /// Perform action to prevent this computer from being Idle. (like press the caps lock key)
+        /// Perform action to prevent this computer from being Idle. (like press the caps lock key, or move Cursor)
         /// </summary>
         private void DoIdlePreventionAction()
         {
-            //TODO STUB
+            //Move Cursor 1,1
+            Point newPos = Cursor.Position;
+            newPos.X += 10;
+            newPos.Y += 10;
+            Cursor.Position = newPos;
         }
     }
 }

@@ -16,6 +16,8 @@ namespace FreshMonitor
         private Thread pollingThread;
         private bool sitePollingEnabled = true;
 
+        private IdleMonitor idleMonitor;
+
         public BackgroundForm()
         {
             InitializeComponent();
@@ -32,18 +34,21 @@ namespace FreshMonitor
             // Create all context menu items and add them to notification tray icon
             MenuItem progNameMenuItem = new MenuItem("Fresh Monitor");
             MenuItem breakMenuItem = new MenuItem("-");
+            MenuItem idlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             MenuItem toggleMenuItem = new MenuItem("Toggle");
             MenuItem quitMenuItem = new MenuItem("Quit");
             ContextMenu contextMenu = new ContextMenu();
             contextMenu.MenuItems.Add(progNameMenuItem);
             contextMenu.MenuItems.Add(breakMenuItem);
+            contextMenu.MenuItems.Add(idlePreventionMenuItem);
             contextMenu.MenuItems.Add(toggleMenuItem);
             contextMenu.MenuItems.Add(quitMenuItem);
             freshMonitorNotifyIcon.ContextMenu = contextMenu;
 
             // Wire up quit button to close application
-            quitMenuItem.Click += quitMenuItem_Click;
             toggleMenuItem.Click += toggleMenuItem_Click;
+            idlePreventionMenuItem.Click += idlePreventionMenuItem_Click;
+            quitMenuItem.Click += quitMenuItem_Click;
 
             //  Hide the form because we don't need it, this is a notification tray application
             this.WindowState = FormWindowState.Minimized;
@@ -55,6 +60,20 @@ namespace FreshMonitor
         }
 
         #region Context Menu Event Handlers
+        void idlePreventionMenuItem_Click(object sender, EventArgs e)
+        {
+            if(idleMonitor==null)
+            {
+                idleMonitor = new IdleMonitor();
+            }
+            idleMonitor.StartIdleProtection(5, 1);
+        }
+
+        void toggleMenuItem_Click(object sender, EventArgs e)
+        {
+            sitePollingEnabled = !sitePollingEnabled;
+        }
+
         /// <summary>
         /// Close the application on click of 'quit' button on context menu
         /// </summary>
@@ -65,11 +84,6 @@ namespace FreshMonitor
             pollingThread.Abort();
             freshMonitorNotifyIcon.Dispose();
             this.Close();
-        }
-
-        void toggleMenuItem_Click(object sender, EventArgs e)
-        {
-            sitePollingEnabled = !sitePollingEnabled;
         }
         #endregion
 
