@@ -67,6 +67,8 @@ namespace FreshMonitor
                 idleMonitor = new IdleMonitor();
             }
             idleMonitor.StartIdleProtection(5, 1);
+            idleMonitor.NotifyIcon = freshMonitorNotifyIcon;
+            idleMonitor.BalloonOnIdlePrevention = true;
         }
 
         void toggleMenuItem_Click(object sender, EventArgs e)

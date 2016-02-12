@@ -19,6 +19,9 @@ namespace FreshMonitor
 
         private Thread clockThread;
 
+        public bool BalloonOnIdlePrevention = false;
+        public NotifyIcon NotifyIcon;
+
         public IdleMonitor()
         {
 
@@ -64,8 +67,16 @@ namespace FreshMonitor
                         idleTime = idleTime.Add(DateTime.Now.Subtract(lastCheckTime));
                         
                         //if idle for too long
-                        if(idleTime.TotalMinutes>=idlePreventionActionInterval)
+                        if (idleTime.TotalMinutes >= idlePreventionActionInterval)
+                        {
                             DoIdlePreventionAction();
+
+                            if (BalloonOnIdlePrevention && NotifyIcon!=null)
+                            {
+                                NotifyIcon.BalloonTipText = "Prevented Idle";
+                                NotifyIcon.ShowBalloonTip(1000);
+                            }
+                        }
                     }
                     else
                         idleTime = TimeSpan.Zero;
@@ -97,8 +108,8 @@ namespace FreshMonitor
         {
             //Move Cursor 1,1
             Point newPos = Cursor.Position;
-            newPos.X += 10;
-            newPos.Y += 10;
+            newPos.X += 5;
+            newPos.Y += 5;
             Cursor.Position = newPos;
         }
     }
