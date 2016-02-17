@@ -1,4 +1,4 @@
-﻿namespace FreshMonitor
+﻿namespace FreshTools
 {
     partial class BackgroundForm
     {

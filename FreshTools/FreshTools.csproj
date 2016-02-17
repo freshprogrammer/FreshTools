@@ -8,10 +8,11 @@
     <ProjectGuid>{B13B1109-FEED-4EA4-96E1-D11D0D779A00}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FreshMonitor</RootNamespace>
-    <AssemblyName>FreshMonitor</AssemblyName>
+    <RootNamespace>FreshTools</RootNamespace>
+    <AssemblyName>FreshTools</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
-    <TargetFrameworkProfile>Client</TargetFrameworkProfile>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
@@ -60,6 +61,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="HDD_Idle.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

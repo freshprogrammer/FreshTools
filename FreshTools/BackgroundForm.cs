@@ -4,13 +4,13 @@ using System.Drawing;
 using System.Reflection;
 using System;
 
-namespace FreshMonitor
+namespace FreshTools
 {
     public partial class BackgroundForm : Form
     {
         //Notification Icon
-        private Icon freshMonitorIcon;
-        private NotifyIcon freshMonitorNotifyIcon;
+        private Icon freshToolsIcon;
+        private NotifyIcon freshToolsNotifyIcon;
         private MenuItem startIdlePreventionMenuItem;
         private MenuItem stopIdlePreventionMenuItem;
 
@@ -25,12 +25,12 @@ namespace FreshMonitor
             InitializeComponent();
 
             // Load icons from embeded resources
-            freshMonitorIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshMonitor.HDD_Idle.ico"));
+            freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
 
             // Create notify icons and assign idle icon and show it
-            freshMonitorNotifyIcon = new NotifyIcon();
-            freshMonitorNotifyIcon.Icon = freshMonitorIcon;
-            freshMonitorNotifyIcon.Visible = true;
+            freshToolsNotifyIcon = new NotifyIcon();
+            freshToolsNotifyIcon.Icon = freshToolsIcon;
+            freshToolsNotifyIcon.Visible = true;
 
             // Create all context menu items and add them to notification tray icon
             MenuItem titleMenuItem = new MenuItem("Fresh Monitor");
@@ -45,7 +45,7 @@ namespace FreshMonitor
             contextMenu.MenuItems.Add(startIdlePreventionMenuItem);
             contextMenu.MenuItems.Add(toggleMenuItem);
             contextMenu.MenuItems.Add(quitMenuItem);
-            freshMonitorNotifyIcon.ContextMenu = contextMenu;
+            freshToolsNotifyIcon.ContextMenu = contextMenu;
 
             // Wire up menu items
             startIdlePreventionMenuItem.Click += startIdlePreventionMenuItem_Click;
@@ -70,12 +70,12 @@ namespace FreshMonitor
                 idleMonitor = new IdleMonitor();
             }
             idleMonitor.StartIdleProtection();
-            idleMonitor.NotifyIcon = freshMonitorNotifyIcon;
+            idleMonitor.NotifyIcon = freshToolsNotifyIcon;
             idleMonitor.BalloonOnIdlePrevention = false;
 
-            int index = freshMonitorNotifyIcon.ContextMenu.MenuItems.IndexOf(startIdlePreventionMenuItem);
-            freshMonitorNotifyIcon.ContextMenu.MenuItems.RemoveAt(index);
-            freshMonitorNotifyIcon.ContextMenu.MenuItems.Add(index, stopIdlePreventionMenuItem);
+            int index = freshToolsNotifyIcon.ContextMenu.MenuItems.IndexOf(startIdlePreventionMenuItem);
+            freshToolsNotifyIcon.ContextMenu.MenuItems.RemoveAt(index);
+            freshToolsNotifyIcon.ContextMenu.MenuItems.Add(index, stopIdlePreventionMenuItem);
         }
 
         private void stopIdlePreventionMenuItem_Click(object sender, EventArgs e)
@@ -85,9 +85,9 @@ namespace FreshMonitor
                 idleMonitor.StopClockThread();
             }
 
-            int index = freshMonitorNotifyIcon.ContextMenu.MenuItems.IndexOf(stopIdlePreventionMenuItem);
-            freshMonitorNotifyIcon.ContextMenu.MenuItems.RemoveAt(index);
-            freshMonitorNotifyIcon.ContextMenu.MenuItems.Add(index, startIdlePreventionMenuItem);
+            int index = freshToolsNotifyIcon.ContextMenu.MenuItems.IndexOf(stopIdlePreventionMenuItem);
+            freshToolsNotifyIcon.ContextMenu.MenuItems.RemoveAt(index);
+            freshToolsNotifyIcon.ContextMenu.MenuItems.Add(index, startIdlePreventionMenuItem);
         }
 
         private void toggleMenuItem_Click(object sender, EventArgs e)
@@ -103,7 +103,7 @@ namespace FreshMonitor
         private void quitMenuItem_Click(object sender, EventArgs e)
         {
             pollingThread.Abort();
-            freshMonitorNotifyIcon.Dispose();
+            freshToolsNotifyIcon.Dispose();
             this.Close();
         }
         #endregion
