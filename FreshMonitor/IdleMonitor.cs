@@ -12,8 +12,8 @@ namespace FreshMonitor
         private DateTime lastCheckTime;
         private Point lastMousePos;
 
-        private const int DEFAULT_CHECK_INTERVAL = 60;
-        private const int DEFAULT_PREVENTION_ACTION_INTERVAL = 13;
+        private const int DEFAULT_CHECK_INTERVAL = 30;
+        private const int DEFAULT_PREVENTION_ACTION_INTERVAL = 4;
 
         private int idleCheckInterval = DEFAULT_CHECK_INTERVAL;
         private int idlePreventionActionInterval = DEFAULT_PREVENTION_ACTION_INTERVAL;

@@ -25,7 +25,6 @@ namespace FreshMonitor
             InitializeComponent();
 
             // Load icons from embeded resources
-            var x = Assembly.GetExecutingAssembly();
             freshMonitorIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshMonitor.HDD_Idle.ico"));
 
             // Create notify icons and assign idle icon and show it
@@ -34,24 +33,24 @@ namespace FreshMonitor
             freshMonitorNotifyIcon.Visible = true;
 
             // Create all context menu items and add them to notification tray icon
-            MenuItem progNameMenuItem = new MenuItem("Fresh Monitor");
+            MenuItem titleMenuItem = new MenuItem("Fresh Monitor");
             MenuItem breakMenuItem = new MenuItem("-");
             startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
             MenuItem toggleMenuItem = new MenuItem("Toggle");
             MenuItem quitMenuItem = new MenuItem("Quit");
             ContextMenu contextMenu = new ContextMenu();
-            contextMenu.MenuItems.Add(progNameMenuItem);
+            contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(breakMenuItem);
             contextMenu.MenuItems.Add(startIdlePreventionMenuItem);
             contextMenu.MenuItems.Add(toggleMenuItem);
             contextMenu.MenuItems.Add(quitMenuItem);
             freshMonitorNotifyIcon.ContextMenu = contextMenu;
 
-            // Wire up quit button to close application
-            toggleMenuItem.Click += toggleMenuItem_Click;
+            // Wire up menu items
             startIdlePreventionMenuItem.Click += startIdlePreventionMenuItem_Click;
             stopIdlePreventionMenuItem.Click += stopIdlePreventionMenuItem_Click;
+            toggleMenuItem.Click += toggleMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
 
             //  Hide the form because we don't need it, this is a notification tray application
@@ -70,9 +69,9 @@ namespace FreshMonitor
             {
                 idleMonitor = new IdleMonitor();
             }
-            idleMonitor.StartIdleProtection(10, 5);
+            idleMonitor.StartIdleProtection();
             idleMonitor.NotifyIcon = freshMonitorNotifyIcon;
-            idleMonitor.BalloonOnIdlePrevention = true;
+            idleMonitor.BalloonOnIdlePrevention = false;
 
             int index = freshMonitorNotifyIcon.ContextMenu.MenuItems.IndexOf(startIdlePreventionMenuItem);
             freshMonitorNotifyIcon.ContextMenu.MenuItems.RemoveAt(index);
