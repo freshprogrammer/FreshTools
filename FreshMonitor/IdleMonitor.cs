@@ -2,6 +2,7 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
+using System.Runtime.InteropServices;
 
 namespace FreshMonitor
 {
@@ -81,6 +82,7 @@ namespace FreshMonitor
                     else
                         idleTime = TimeSpan.Zero;
 
+                    Console.WriteLine("Computer Idle time: " + idleTime + "");
                     lastCheckTime = DateTime.Now;
                     Thread.Sleep(idleCheckInterval);
                 }
@@ -98,6 +100,7 @@ namespace FreshMonitor
             if (lastMousePos.Equals(Cursor.Position))
                 result = true;
             lastMousePos = Cursor.Position;
+            //Console.WriteLine("IsComputerIdle() - " + result);
             return result;
         }
 
@@ -106,11 +109,13 @@ namespace FreshMonitor
         /// </summary>
         private void DoIdlePreventionAction()
         {
+            Console.WriteLine("DoIdlePreventionAction()");
             //Move Cursor 1,1
             Point newPos = Cursor.Position;
             newPos.X += 5;
             newPos.Y += 5;
-            Cursor.Position = newPos;
+            Cursor.Position = newPos;//tricks IsComputerIdle() test but doesn't trick windows
+            SendKeys.SendWait("^");//sends ctrl key - keeps computer awake
         }
     }
 }

@@ -66,7 +66,7 @@ namespace FreshMonitor
             {
                 idleMonitor = new IdleMonitor();
             }
-            idleMonitor.StartIdleProtection(5, 1);
+            idleMonitor.StartIdleProtection(10, 5);
             idleMonitor.NotifyIcon = freshMonitorNotifyIcon;
             idleMonitor.BalloonOnIdlePrevention = true;
         }
