@@ -43,6 +43,7 @@ namespace FreshMonitor
 
         private void StartClockThread()
         {
+            Console.WriteLine("IdleMonitor.StartClockThread()");
             if (clockThread == null)
             {
                 lastCheckTime = DateTime.Now;
@@ -50,6 +51,26 @@ namespace FreshMonitor
 
                 clockThread = new Thread(new ThreadStart(ClockThreadRunning));
                 clockThread.Start();
+            }
+        }
+
+        public void StopClockThread()
+        {
+            Console.WriteLine("IdleMonitor.StopClockThread()");
+            if (clockThread != null)
+            {
+                try
+                {
+                    clockThread.Abort();
+                    clockThread = null;
+                }
+                catch (ThreadAbortException)
+                {
+                }
+                finally
+                {
+                    clockThread = null;
+                }
             }
         }
 
@@ -82,7 +103,7 @@ namespace FreshMonitor
                     else
                         idleTime = TimeSpan.Zero;
 
-                    Console.WriteLine("Computer Idle time: " + idleTime + "");
+                    Console.WriteLine("IdleMonitor.ClockThreadRunning() - Computer Idle time: " + idleTime + "");
                     lastCheckTime = DateTime.Now;
                     Thread.Sleep(idleCheckInterval);
                 }
@@ -105,11 +126,11 @@ namespace FreshMonitor
         }
 
         /// <summary>
-        /// Perform action to prevent this computer from being Idle. (like press the caps lock key, or move Cursor)
+        /// Perform action to prevent this computer from being Idle. (like press the ctrl key, or move Cursor)
         /// </summary>
         private void DoIdlePreventionAction()
         {
-            Console.WriteLine("DoIdlePreventionAction()");
+            Console.WriteLine("IdleMonitor.DoIdlePreventionAction()");
             //Move Cursor 1,1
             Point newPos = Cursor.Position;
             newPos.X += 5;

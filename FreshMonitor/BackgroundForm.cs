@@ -9,8 +9,10 @@ namespace FreshMonitor
     public partial class BackgroundForm : Form
     {
         //Notification Icon
-        private NotifyIcon freshMonitorNotifyIcon;
         private Icon freshMonitorIcon;
+        private NotifyIcon freshMonitorNotifyIcon;
+        private MenuItem startIdlePreventionMenuItem;
+        private MenuItem stopIdlePreventionMenuItem;
 
         //Threads
         private Thread pollingThread;
@@ -34,20 +36,22 @@ namespace FreshMonitor
             // Create all context menu items and add them to notification tray icon
             MenuItem progNameMenuItem = new MenuItem("Fresh Monitor");
             MenuItem breakMenuItem = new MenuItem("-");
-            MenuItem idlePreventionMenuItem = new MenuItem("Start Idle Prevention");
+            startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
+            stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
             MenuItem toggleMenuItem = new MenuItem("Toggle");
             MenuItem quitMenuItem = new MenuItem("Quit");
             ContextMenu contextMenu = new ContextMenu();
             contextMenu.MenuItems.Add(progNameMenuItem);
             contextMenu.MenuItems.Add(breakMenuItem);
-            contextMenu.MenuItems.Add(idlePreventionMenuItem);
+            contextMenu.MenuItems.Add(startIdlePreventionMenuItem);
             contextMenu.MenuItems.Add(toggleMenuItem);
             contextMenu.MenuItems.Add(quitMenuItem);
             freshMonitorNotifyIcon.ContextMenu = contextMenu;
 
             // Wire up quit button to close application
             toggleMenuItem.Click += toggleMenuItem_Click;
-            idlePreventionMenuItem.Click += idlePreventionMenuItem_Click;
+            startIdlePreventionMenuItem.Click += startIdlePreventionMenuItem_Click;
+            stopIdlePreventionMenuItem.Click += stopIdlePreventionMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
 
             //  Hide the form because we don't need it, this is a notification tray application
@@ -60,7 +64,7 @@ namespace FreshMonitor
         }
 
         #region Context Menu Event Handlers
-        void idlePreventionMenuItem_Click(object sender, EventArgs e)
+        private void startIdlePreventionMenuItem_Click(object sender, EventArgs e)
         {
             if(idleMonitor==null)
             {
@@ -69,9 +73,25 @@ namespace FreshMonitor
             idleMonitor.StartIdleProtection(10, 5);
             idleMonitor.NotifyIcon = freshMonitorNotifyIcon;
             idleMonitor.BalloonOnIdlePrevention = true;
+
+            int index = freshMonitorNotifyIcon.ContextMenu.MenuItems.IndexOf(startIdlePreventionMenuItem);
+            freshMonitorNotifyIcon.ContextMenu.MenuItems.RemoveAt(index);
+            freshMonitorNotifyIcon.ContextMenu.MenuItems.Add(index, stopIdlePreventionMenuItem);
         }
 
-        void toggleMenuItem_Click(object sender, EventArgs e)
+        private void stopIdlePreventionMenuItem_Click(object sender, EventArgs e)
+        {
+            if(idleMonitor!=null)
+            {
+                idleMonitor.StopClockThread();
+            }
+
+            int index = freshMonitorNotifyIcon.ContextMenu.MenuItems.IndexOf(stopIdlePreventionMenuItem);
+            freshMonitorNotifyIcon.ContextMenu.MenuItems.RemoveAt(index);
+            freshMonitorNotifyIcon.ContextMenu.MenuItems.Add(index, startIdlePreventionMenuItem);
+        }
+
+        private void toggleMenuItem_Click(object sender, EventArgs e)
         {
             sitePollingEnabled = !sitePollingEnabled;
         }
@@ -81,7 +101,7 @@ namespace FreshMonitor
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        void quitMenuItem_Click(object sender, EventArgs e)
+        private void quitMenuItem_Click(object sender, EventArgs e)
         {
             pollingThread.Abort();
             freshMonitorNotifyIcon.Dispose();
