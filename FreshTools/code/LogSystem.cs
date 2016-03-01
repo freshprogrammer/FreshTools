@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace FreshTools
 {
-    class LogSystem
+    static class LogSystem
     {
         //file
         private static object logFileLock = new Object();

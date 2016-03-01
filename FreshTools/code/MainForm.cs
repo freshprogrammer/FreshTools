@@ -123,6 +123,10 @@ namespace FreshTools
             HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyPressed);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3);
         }
 
         static void HotKeyPressed(object sender, HotKeyEventArgs args)
@@ -132,12 +136,32 @@ namespace FreshTools
                 if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.A)
                 {
                     LogSystem.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - MoveActiveWindowToLeftMonitor()");
-                    //MoveActiveWindowToLeftMonitor();
+                    WindowManager.MoveActiveWindowToLeftMonitor();
                 }
                 else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.S)
                 {
                     LogSystem.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - MoveActiveWindowToRightMonitor()");
-                    //MoveActiveWindowToRightMonitor();
+                    WindowManager.MoveActiveWindowToRightMonitor();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad7)
+                {
+                    LogSystem.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - MoveActiveWindowToRightMonitor()");
+                    WindowManager.MoveActiveWindowToTopLeft();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad9)
+                {
+                    LogSystem.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - MoveActiveWindowToRightMonitor()");
+                    WindowManager.MoveActiveWindowToTopRight();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad1)
+                {
+                    LogSystem.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - MoveActiveWindowToRightMonitor()");
+                    WindowManager.MoveActiveWindowToBottomLeft();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad3)
+                {
+                    LogSystem.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - MoveActiveWindowToRightMonitor()");
+                    WindowManager.MoveActiveWindowToBottomRight();
                 }
                 else //unknown hot key pressed
                 {

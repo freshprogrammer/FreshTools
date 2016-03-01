@@ -71,6 +71,7 @@
     </Compile>
     <Compile Include="code\IdleMonitor.cs" />
     <Compile Include="code\Program.cs" />
+    <Compile Include="code\WindowManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
