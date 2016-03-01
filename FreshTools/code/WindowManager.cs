@@ -44,6 +44,30 @@ namespace FreshTools
             MoveActiveWindowTo(childRct.X - screen.Width, childRct.Y);
         }
 
+        public static void MoveActiveWindowToTop()
+        {
+            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
+            MoveActiveWindowTo(workingArea.X, workingArea.Y, workingArea.Width, workingArea.Height / 2);
+        }
+
+        public static void MoveActiveWindowToBottom()
+        {
+            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
+            MoveActiveWindowTo(workingArea.X, workingArea.Y + workingArea.Height / 2, workingArea.Width, workingArea.Height / 2);
+        }
+
+        public static void MoveActiveWindowToLeft()
+        {
+            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
+            MoveActiveWindowTo(workingArea.X, workingArea.Y, workingArea.Width / 2, workingArea.Height);
+        }
+
+        public static void MoveActiveWindowToRight()
+        {
+            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
+            MoveActiveWindowTo(workingArea.X + workingArea.Width / 2, workingArea.Y, workingArea.Width / 2, workingArea.Height);
+        }
+
         public static void MoveActiveWindowToTopLeft()
         {
             Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
