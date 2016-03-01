@@ -6,7 +6,7 @@ using System;
 
 namespace FreshTools
 {
-    public partial class BackgroundForm : Form
+    public class BackgroundForm : Form
     {
         //Notification Icon
         private Icon freshToolsIcon;
@@ -22,8 +22,6 @@ namespace FreshTools
 
         public BackgroundForm()
         {
-            InitializeComponent();
-
             // Load icons from embeded resources
             freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
 
