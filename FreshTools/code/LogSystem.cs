@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 
 namespace FreshTools
 {
@@ -16,10 +17,21 @@ namespace FreshTools
         private static int exceptionCount = 0;
         private static List<string> logRecords = new List<string>(logHistoryCount);
 
+
+        /// <summary>
+        /// Create Log file with rolling logs in users local appdata folder for this application
+        /// </summary>
+        public static void Init()
+        {
+            //C:\Users\USER\AppData\Local\APPNAME\logs\log.txt
+            string logFile = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\logs\" + logFileName;
+            Init(logFile);
+        }
+
         /// <summary>
         /// Create Log file with rolling logs - move log to next log file up (1 to 2) up to the limit
         /// </summary>
-        /// <param name="logFileFullName"></param>
+        /// <param name="logFileFullName">full path to destination log file</param>
         public static void Init(string logFileFullName)
         {
             logFileName = logFileFullName;
@@ -38,6 +50,8 @@ namespace FreshTools
             }
             //create any necisarry directories for logs
             Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
+
+            Log(Assembly.GetExecutingAssembly().GetName().Name + " (v" + Assembly.GetExecutingAssembly().GetName().Version + ")");
         }
 
         public static void Log(string log)
@@ -69,9 +83,9 @@ namespace FreshTools
         }
 
         /// <summary>
-        /// Returns X log records
+        /// Returns X log records sepereated by line feeds
         /// </summary>
-        /// <param name="count"></param>
+        /// <param name="count">Number of records to return. -1 for all in memory</param>
         /// <returns></returns>
         public static string GetLogData(int count=-1)
         {

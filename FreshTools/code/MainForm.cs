@@ -24,8 +24,7 @@ namespace FreshTools
         {
             Thread.CurrentThread.Name = "FreshTools MainForm Thread";
 
-            LogSystem.Init(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\FreshTools\logs\log.txt");
-            LogSystem.Log("Fresh Tools (v" + Assembly.GetExecutingAssembly().GetName().Version + ")");
+            LogSystem.Init();
 
             // Load icons from embeded resources
             freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
@@ -66,7 +65,7 @@ namespace FreshTools
             pollingThread = new Thread(new ThreadStart(PollingThread));
             pollingThread.Start();
 
-            LogSystem.Log("Fresh Tools started sucsessfully");
+            LogSystem.Log("FreshTools started sucsessfully");
         }
 
         #region Context Menu Event Handlers
