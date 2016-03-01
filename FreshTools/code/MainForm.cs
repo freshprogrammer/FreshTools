@@ -22,6 +22,11 @@ namespace FreshTools
 
         public MainForm()
         {
+            Thread.CurrentThread.Name = "FreshTools MainForm Thread";
+
+            LogSystem.Init(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\FreshTools\logs\log.txt");
+            LogSystem.Log("Fresh Tools (v" + Assembly.GetExecutingAssembly().GetName().Version + ")");
+
             // Load icons from embeded resources
             freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
 
@@ -55,9 +60,13 @@ namespace FreshTools
             this.WindowState = FormWindowState.Minimized;
             this.ShowInTaskbar = false;
 
+            RegisterHotkeys();
+
             // Start worker thread that pulls HDD activity
             pollingThread = new Thread(new ThreadStart(PollingThread));
             pollingThread.Start();
+
+            LogSystem.Log("Fresh Tools started sucsessfully");
         }
 
         #region Context Menu Event Handlers
@@ -100,9 +109,47 @@ namespace FreshTools
         /// <param name="e"></param>
         private void quitMenuItem_Click(object sender, EventArgs e)
         {
+            LogSystem.Log("quitMenuItem_Click()");
             pollingThread.Abort();
             freshToolsNotifyIcon.Dispose();
             this.Close();
+        }
+        #endregion
+
+        #region HotKey Events
+        private static void RegisterHotkeys()
+        {
+            //register hotkey(s)
+            //GenericsClass.LogSystem("Registering Hotkeys");
+            HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyPressed);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
+            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
+        }
+
+        static void HotKeyPressed(object sender, HotKeyEventArgs args)
+        {
+            try
+            {
+                if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.A)
+                {
+                    LogSystem.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - MoveActiveWindowToLeftMonitor()");
+                    //MoveActiveWindowToLeftMonitor();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.S)
+                {
+                    LogSystem.Log("HotKeyManager_HotKeyPressed() - " + args.Modifiers + "+" + args.Key + " - MoveActiveWindowToRightMonitor()");
+                    //MoveActiveWindowToRightMonitor();
+                }
+                else //unknown hot key pressed
+                {
+                    //uncaught hotkey
+                    LogSystem.Log("HotKeyManager_HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
+                }
+            }
+            catch (Exception e)
+            {
+                LogSystem.Log("Exception#" + LogSystem.IncrementExceptionCount() + " in MainForm.HotKeyPressed(object,HotKeyEventArgs) - " + e);
+            }
         }
         #endregion
 

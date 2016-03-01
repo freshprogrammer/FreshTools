@@ -64,6 +64,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="code\HotKeyManager.cs" />
+    <Compile Include="code\LogSystem.cs" />
     <Compile Include="code\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
