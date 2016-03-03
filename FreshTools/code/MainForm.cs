@@ -139,11 +139,11 @@ namespace FreshTools
             {
                 if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.A)
                 {
-                    WindowManager.MoveActiveWindowToLeftMonitor();
+                    WindowManager.MoveActiveWindowToLeftScreen();
                 }
                 else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.S)
                 {
-                    WindowManager.MoveActiveWindowToRightMonitor();
+                    WindowManager.MoveActiveWindowToRightScreen();
                 }
                 else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad1)
                 {

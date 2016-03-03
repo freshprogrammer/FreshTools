@@ -15,7 +15,25 @@ namespace FreshTools
         public static extern IntPtr GetForegroundWindow();
 
         [DllImport("user32.dll")]
-        public static extern bool GetWindowRect(IntPtr hwnd, ref Rectangle rectangle);
+        public static extern bool GetWindowRect(IntPtr hwnd, ref Rect Rect);
+
+        [Serializable, StructLayout(LayoutKind.Sequential)]
+        public struct Rect
+        {
+            public int Left;
+            public int Top;
+            public int Right;
+            public int Bottom;
+            public int X { get { return Left; } }
+            public int Y { get { return Top; } }
+            public int Width { get { return Right - Left; } }
+            public int Height { get { return Bottom - Top; } }
+
+            public Rectangle ToRectangle()
+            {
+                return Rectangle.FromLTRB(Left, Top, Right, Bottom);
+            }
+        }
 
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
         public static extern IntPtr SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
@@ -26,28 +44,49 @@ namespace FreshTools
 
         public static bool wrapLeftRightScreens = true;
 
-        public static void MoveActiveWindowToRightMonitor()
+        public static void MoveActiveWindowToRightScreen()
         {
-            IntPtr handle = GetForegroundWindow();
-            Rectangle childRect = new Rectangle();
-            GetWindowRect(handle, ref childRect);
-
-            Rectangle screen = GetScreenThisWindowIsOn(childRect).WorkingArea;
-            MoveActiveWindowTo(childRect.X + screen.Width, childRect.Y);
+            MoveActiveWindowOffScreenInDirection(new Point(1,0));
         }
 
-        public static void MoveActiveWindowToLeftMonitor()
+        public static void MoveActiveWindowToLeftScreen()
         {
-            IntPtr handle = GetForegroundWindow();
-            Rectangle childRect = new Rectangle();
-            GetWindowRect(handle, ref childRect);
+            MoveActiveWindowOffScreenInDirection(new Point(-1,0));
+        }
 
-            Screen currentScreen = GetScreenThisWindowIsOn(childRect);
+        /// <summary>
+        /// Move this window off this screen in the given direction eg (1,0) for right.
+        /// </summary>
+        /// <param name="dir">Direction to move window in units of the active screens' resolution.</param>
+        public static void MoveActiveWindowOffScreenInDirection(Point dir)
+        {
+            if(Screen.AllScreens.Length==1)return;
+            IntPtr handle = GetForegroundWindow();
+            Rect rect = new Rect();
+            GetWindowRect(handle, ref rect);
+            Rectangle childRect = rect.ToRectangle();
+
+            Screen currentScreen = GetScreenContainingWindow(childRect);
             Rectangle workingArea = currentScreen.WorkingArea;
 
-            //MoveActiveWindowTo(childRect.X - workingArea.Width, childRect.Y);
+            childRect.Offset(workingArea.Width * dir.X, workingArea.Height * dir.Y);
 
-            Screen newScreen = GetScreenToTheLeft(currentScreen);
+            Screen newScreen = GetScreenContainingWindow(childRect);
+
+            if (wrapLeftRightScreens)
+            {
+                if (newScreen == currentScreen)
+                {
+                    if (dir.Y == 0)
+                    {
+                        if (dir.X == 1)//wrap right to left most
+                            newScreen = GetLeftMostScreen();
+                        else if (dir.X == -1)//wrap Left to right most
+                            newScreen = GetRightMostScreen();
+                    }
+                }
+            }
+
             MoveActiveWindowToScreen(newScreen);
         }
 
@@ -101,21 +140,38 @@ namespace FreshTools
         }
         #endregion
 
-        public static void MoveActiveWindowToScreen(Screen screen)
+        /// <summary>
+        /// Move window to new screen and scale it as necisarry
+        /// </summary>
+        /// <param name="newScreen"></param>
+        public static void MoveActiveWindowToScreen(Screen newScreen)
         {
             IntPtr handle = GetForegroundWindow();
-            Rectangle childRect = new Rectangle();
-            GetWindowRect(handle, ref childRect);
+            Rect rect = new Rect();
+            GetWindowRect(handle, ref rect);
+            Rectangle childRect = rect.ToRectangle();
 
-            Screen currentScreen = GetScreenThisWindowIsOn(childRect);
-            Rectangle workingArea = currentScreen.WorkingArea;
+            Screen currentScreen = GetScreenContainingWindow(childRect);
+            Rectangle currentWorkingArea = currentScreen.WorkingArea;
 
-            //MoveActiveWindowTo(childRect.X - workingArea.Width, childRect.Y);
+            double xPosPercentage = (1.0*childRect.X - currentWorkingArea.X) / currentWorkingArea.Width;
+            double yPosPercentage = (1.0 * childRect.Y - currentWorkingArea.Y) / currentWorkingArea.Height;
+            int newX = (int)(newScreen.WorkingArea.X + newScreen.WorkingArea.Width * xPosPercentage);
+            int newY = (int)(newScreen.WorkingArea.Y + newScreen.WorkingArea.Height * yPosPercentage);
+            
+            if (newScreen.WorkingArea.Width != currentScreen.WorkingArea.Width || newScreen.WorkingArea.Height != currentScreen.WorkingArea.Height)
+            {
+                //different size working area/resolution
+                //scale window to new resolution
+                double widthPercentage = 1.0 * rect.Width / currentWorkingArea.Width;
+                double heightPercentage = 1.0 * rect.Height / currentWorkingArea.Height;
+                int newWidth = (int)(newScreen.WorkingArea.Width * widthPercentage);
+                int newHeight = (int)(newScreen.WorkingArea.Height * heightPercentage);
+                MoveActiveWindowTo(newX, newY, newWidth, newHeight);
+            }
+            else
+                MoveActiveWindowTo(newX, newY);
 
-            double xPosPercentage = (childRect.X - workingArea.X) / workingArea.Width;
-            double yPosPercentage = (childRect.Y - workingArea.Y) / workingArea.Height;
-            double widthPercentage = childRect.Width / workingArea.Width;
-            double heightPercentage = childRect.Height / workingArea.Height;
         }
 
         public static void MoveActiveWindowTo(int x, int y)
@@ -151,10 +207,11 @@ namespace FreshTools
         public static Screen GetScreenActiveWindowIsOn()
         {
             IntPtr handle = GetForegroundWindow();
-            Rectangle childRct = new Rectangle();
-            GetWindowRect(handle, ref childRct);
+            Rect rect = new Rect();
+            GetWindowRect(handle, ref rect);
+            Rectangle childRect = rect.ToRectangle();
 
-            return GetScreenThisWindowIsOn(childRct);
+            return GetScreenContainingWindow(childRect);
         }
 
         /// <summary>
@@ -162,7 +219,7 @@ namespace FreshTools
         /// </summary>
         /// <param name="child">Rectangle of child window to be located</param>
         /// <returns></returns>
-        public static Screen GetScreenThisWindowIsOn(Rectangle child)
+        public static Screen GetScreenContainingWindow(Rectangle child)
         {
             Point childCenter = new Point(child.X + child.Width / 2, child.Y + child.Height / 2);
             foreach (Screen s in Screen.AllScreens)
@@ -203,7 +260,7 @@ namespace FreshTools
             return screen;
         }
 
-        //this probably only NEEDS to calculated once (Assuming the screens dont move or change)
+        //these probably only NEED to be calculated once (Assuming the screens dont move or change)
         public static Screen GetLeftMostScreen()
         {
             Screen result = Screen.PrimaryScreen;
