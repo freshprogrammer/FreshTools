@@ -13,7 +13,7 @@ namespace FreshTools
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new BackgroundForm());
+            Application.Run(new MainForm());
         }
     }
 }
