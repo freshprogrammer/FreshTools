@@ -14,6 +14,10 @@ namespace FreshTools
         private MenuItem startIdlePreventionMenuItem;
         private MenuItem stopIdlePreventionMenuItem;
 
+        //Settings
+        private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
+        private VariablesFile settingsFile;
+
         //Threads
         private Thread pollingThread;
         private bool sitePollingEnabled = true;
@@ -23,8 +27,8 @@ namespace FreshTools
         public MainForm()
         {
             Thread.CurrentThread.Name = "FreshTools MainForm Thread";
-
             LogSystem.Init();
+            LoadConfig();
 
             // Load icons from embeded resources
             freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
@@ -66,6 +70,26 @@ namespace FreshTools
             pollingThread.Start();
 
             LogSystem.Log("FreshTools started sucsessfully");
+        }
+
+        public void LoadConfig()
+        {
+            settingsFile = new VariablesFile(configFilePath, null, false);
+            VariableLibrary vars = settingsFile.variables;
+
+            //vars.GetVariable("EnableWindowManager", ref EnableWindowManager, true);
+            //vars.GetVariable("testVariable", ref testVariable, true);
+        }
+
+        /// <summary>
+        /// Make sure config variables that can be changed are updated in config file
+        /// </summary>
+        private void SaveVariables()
+        {
+            //settingsFile.variables.SetValue("EnableWindowManager", "" + EnableWindowManager);
+            //settingsFile.variables.SetValue("testVariable", "" + testVariable);
+
+            settingsFile.SaveAs(configFilePath);
         }
 
         #region Context Menu Event Handlers

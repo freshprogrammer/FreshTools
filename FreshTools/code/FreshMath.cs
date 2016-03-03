@@ -5,6 +5,8 @@ namespace FreshTools
 {
     class FreshMath
     {
+        public static Random Random = new Random();
+
         public static double DegreesToRadians(double angleInDegrees)
         {
             return angleInDegrees * Math.PI / 180;
