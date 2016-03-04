@@ -167,14 +167,14 @@ namespace FreshTools
                 double heightPercentage = 1.0 * rect.Height / currentWorkingArea.Height;
                 int newWidth = (int)(newScreen.WorkingArea.Width * widthPercentage);
                 int newHeight = (int)(newScreen.WorkingArea.Height * heightPercentage);
-                MoveActiveWindowTo(newX, newY, newWidth, newHeight);
+                MoveActiveWindowTo(newX, newY, newWidth, newHeight, false);
             }
             else
-                MoveActiveWindowTo(newX, newY);
+                MoveActiveWindowTo(newX, newY, false);
 
         }
 
-        public static void MoveActiveWindowTo(int x, int y)
+        public static void MoveActiveWindowTo(int x, int y, bool includePosOffset = true)
         {
             const short SWP_NOSIZE = 1;
             //const short SWP_NOMOVE = 0X2;
@@ -184,13 +184,20 @@ namespace FreshTools
             IntPtr handle = GetForegroundWindow();
             if (handle != IntPtr.Zero)
             {
+                if (includePosOffset)
+                {
+                    x -= positionOffset.X;
+                    y -= positionOffset.Y;
+                }
+
                 const int cx = 0;
                 const int cy = 0;
-                SetWindowPos(handle, 0, x - positionOffset.X, y - positionOffset.Y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                SetWindowPos(handle, 0, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
             }
         }
 
-        public static void MoveActiveWindowTo(int x, int y, int newWidth, int newHeight)
+        //if moving window on same screen you need to offset its pos. If moving window between screens the x,y pos should already be know and not need to be re-offset
+        public static void MoveActiveWindowTo(int x, int y, int newWidth, int newHeight, bool includePosOffset=true)
         {
             const short SWP_NOSIZE = 0;
             //const short SWP_NOMOVE = 0X2;
@@ -200,7 +207,13 @@ namespace FreshTools
             IntPtr handle = GetForegroundWindow();
             if (handle != IntPtr.Zero)
             {
-                SetWindowPos(handle, 0, x - positionOffset.X, y - positionOffset.Y, newWidth + resizeOffset.X, newHeight + resizeOffset.Y, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                if (includePosOffset)
+                {
+                    x -= positionOffset.X;
+                    y -= positionOffset.Y;
+                }
+
+                SetWindowPos(handle, 0, x, y, newWidth + resizeOffset.X, newHeight + resizeOffset.Y, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
             }
         }
 
