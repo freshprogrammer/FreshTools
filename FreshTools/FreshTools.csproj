@@ -64,21 +64,21 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="code\FixedSizeArraycs.cs" />
-    <Compile Include="code\FreshArchives.cs" />
-    <Compile Include="code\FreshMath.cs" />
-    <Compile Include="code\HotKeyManager.cs" />
-    <Compile Include="code\LogSystem.cs" />
+    <Compile Include="code\Generics\FixedSizeArray.cs" />
+    <Compile Include="code\Generics\FreshArchives.cs" />
+    <Compile Include="code\Generics\FreshMath.cs" />
+    <Compile Include="code\Generics\Profiler.cs" />
     <Compile Include="code\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="code\IdleMonitor.cs" />
-    <Compile Include="code\Profiler.cs" />
     <Compile Include="code\Scripting\FreshScript.cs" />
     <Compile Include="code\Scripting\Variable.cs" />
     <Compile Include="code\Scripting\VariableLibrary.cs" />
     <Compile Include="code\Scripting\VariablesFile.cs" />
-    <Compile Include="code\WindowManager.cs" />
+    <Compile Include="code\Systems\HotKeyManager.cs" />
+    <Compile Include="code\Systems\LogSystem.cs" />
+    <Compile Include="code\Systems\WindowManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -109,6 +109,7 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
