@@ -1,8 +1,8 @@
-﻿using System.Windows.Forms;
-using System.Threading;
+﻿using System;
 using System.Drawing;
 using System.Reflection;
-using System;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace FreshTools
 {
@@ -14,6 +14,10 @@ namespace FreshTools
         private MenuItem startIdlePreventionMenuItem;
         private MenuItem stopIdlePreventionMenuItem;
 
+        //Settings
+        private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
+        private VariablesFile settingsFile;
+
         //Threads
         private Thread pollingThread;
         private bool sitePollingEnabled = true;
@@ -23,8 +27,8 @@ namespace FreshTools
         public MainForm()
         {
             Thread.CurrentThread.Name = "FreshTools MainForm Thread";
-
             LogSystem.Init();
+            LoadConfig();
 
             // Load icons from embeded resources
             freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
@@ -35,7 +39,7 @@ namespace FreshTools
             freshToolsNotifyIcon.Visible = true;
 
             // Create all context menu items and add them to notification tray icon
-            MenuItem titleMenuItem = new MenuItem("Fresh Monitor");
+            MenuItem titleMenuItem = new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version));
             MenuItem breakMenuItem = new MenuItem("-");
             startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
@@ -66,6 +70,35 @@ namespace FreshTools
             pollingThread.Start();
 
             LogSystem.Log("FreshTools started sucsessfully");
+        }
+
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main(string[] args)
+        {
+            Application.Run(new MainForm());
+        }
+
+        public void LoadConfig()
+        {
+            settingsFile = new VariablesFile(configFilePath, null, false);
+            VariableLibrary vars = settingsFile.variables;
+
+            //vars.GetVariable("EnableWindowManager", ref EnableWindowManager, true);
+            //vars.GetVariable("testVariable", ref testVariable, true);
+        }
+
+        /// <summary>
+        /// Make sure config variables that can be changed are updated in config file
+        /// </summary>
+        private void SaveVariables()
+        {
+            //settingsFile.variables.SetValue("EnableWindowManager", "" + EnableWindowManager);
+            //settingsFile.variables.SetValue("testVariable", "" + testVariable);
+
+            settingsFile.SaveAs(configFilePath);
         }
 
         #region Context Menu Event Handlers
