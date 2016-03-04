@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
@@ -9,13 +10,34 @@ namespace FreshTools
     /// <summary>
     /// Created as a replacement for the discontinued winsplit revolution on windows 10
     /// </summary>
-    static class WindowManager
+    public static class WindowManager
     {
+        public static bool WrapLeftRightScreens = true;
+
+        private static List<RectangleF> cornerSizes;
+        private static List<RectangleF> topSizes;
+        private static List<RectangleF> sideSizes;
+
         //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
-        private static Point positionOffset = new Point(7, 0);
+        private static Point positionOffset = new Point(-7, 0);
         private static Point resizeOffset = new Point(14, 7);
 
-        public static bool wrapLeftRightScreens = true;
+        static WindowManager()
+        {
+            cornerSizes = new List<RectangleF>(3);
+            cornerSizes.Add(new RectangleF(0, 0, 0.5f,  0.5f));
+            cornerSizes.Add(new RectangleF(0, 0, 0.33f, 0.5f));
+            cornerSizes.Add(new RectangleF(0, 0, 0.67f, 0.5f));
+            
+            sideSizes = new List<RectangleF>(3);
+            sideSizes.Add(new RectangleF(0, 0, 0.5f,  1));
+            sideSizes.Add(new RectangleF(0, 0, 0.33f, 1));
+            sideSizes.Add(new RectangleF(0, 0, 0.67f, 1));
+
+            topSizes = new List<RectangleF>(2);
+            topSizes.Add(new RectangleF(0, 0, 1, 0.5f));
+            topSizes.Add(new RectangleF(0.33f, 0, 0.34f, 0.5f));
+        }
 
         #region External functions
         [DllImport("user32.dll")]
@@ -76,7 +98,7 @@ namespace FreshTools
 
             Screen newScreen = GetScreenContainingWindow(childRect);
 
-            if (wrapLeftRightScreens)
+            if (WrapLeftRightScreens)
             {
                 if (newScreen == currentScreen)
                 {
@@ -128,7 +150,7 @@ namespace FreshTools
         }
 #endregion
 
-        #region Window movement logic
+        #region Window movement & snap logic
         public static void MoveActiveWindowTo(int x, int y, bool includePosOffset = true)
         {
             const short SWP_NOSIZE = 1;
@@ -144,8 +166,8 @@ namespace FreshTools
             {
                 if (includePosOffset)
                 {
-                    x -= positionOffset.X;
-                    y -= positionOffset.Y;
+                    x += positionOffset.X;
+                    y += positionOffset.Y;
                 }
 
                 SetWindowPos(handle, 0, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
@@ -153,7 +175,7 @@ namespace FreshTools
         }
 
         //if moving window on same screen you need to offset its pos. If moving window between screens the x,y pos should already be know and not need to be re-offset
-        public static void MoveActiveWindowTo(int x, int y, int newWidth, int newHeight, bool includePosOffset=true)
+        private static void MoveActiveWindowTo(int x, int y, int newWidth, int newHeight, bool includePosOffset=true)
         {
             const short SWP_NOSIZE = 0;
             //const short SWP_NOMOVE = 0X2;
@@ -165,8 +187,8 @@ namespace FreshTools
             {
                 if (includePosOffset)
                 {
-                    x -= positionOffset.X;
-                    y -= positionOffset.Y;
+                    x += positionOffset.X;
+                    y += positionOffset.Y;
 
                     newWidth += resizeOffset.X;
                     newHeight += resizeOffset.Y;
@@ -175,55 +197,121 @@ namespace FreshTools
                 SetWindowPos(handle, 0, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
             }
         }
-        #endregion
 
-        #region Move window window screen - to all 8 directions
-        public static void MoveActiveWindowToTop()
+        private static void SnapActiveWindow(SnapDirection dir)
         {
             Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
-            MoveActiveWindowTo(workingArea.X, workingArea.Y, workingArea.Width, workingArea.Height / 2);
+            RectangleF relativeRectangle = GetActiveWindowRelativeRectangleF();
+
+            RectangleF[] snapAreas = null;
+            switch (dir)
+            {
+                case SnapDirection.TopLeft:
+                case SnapDirection.TopRight:
+                case SnapDirection.BottomLeft:
+                case SnapDirection.BottomRight:
+                    snapAreas = new RectangleF[cornerSizes.Count];
+                    cornerSizes.CopyTo(snapAreas);
+                    break;
+                case SnapDirection.Top:
+                case SnapDirection.Bottom:
+                    snapAreas = new RectangleF[topSizes.Count];
+                    topSizes.CopyTo(snapAreas);
+                    break;
+                case SnapDirection.Left:
+                case SnapDirection.Right:
+                    snapAreas = new RectangleF[sideSizes.Count];
+                    sideSizes.CopyTo(snapAreas);
+                    break;
+            }
+
+            //offset snap areas X
+            switch (dir)
+            {
+                case SnapDirection.TopLeft:
+                case SnapDirection.Top:
+                case SnapDirection.Left:
+                case SnapDirection.Bottom:
+                case SnapDirection.BottomLeft:
+                    break;//do nothing
+                case SnapDirection.BottomRight:
+                case SnapDirection.TopRight:
+                case SnapDirection.Right:
+                    for (int i = 0; i < snapAreas.Length; i++)
+                    {
+                        snapAreas[i].X = 1 - snapAreas[i].Width;
+                    }
+                    break;
+            }
+
+            //offset snap areas Y
+            switch (dir)
+            {
+                case SnapDirection.Top:
+                case SnapDirection.Left:
+                case SnapDirection.Right:
+                case SnapDirection.TopLeft:
+                case SnapDirection.TopRight:
+                    break;//do nothing
+                case SnapDirection.BottomRight:
+                case SnapDirection.Bottom:
+                case SnapDirection.BottomLeft:
+                    for (int i = 0; i < snapAreas.Length; i++)
+                    {
+                        snapAreas[i].Y = 1 - snapAreas[i].Height;
+                    }
+                    break;
+            }
+
+            LogSystem.Log(dir + " SnapArea = " + snapAreas[0]);
+
+            int newX = (int)(snapAreas[0].X * workingArea.Width);
+            int newY = (int)(snapAreas[0].Y * workingArea.Height);
+            int newW = (int)(snapAreas[0].Width * workingArea.Width);
+            int newH = (int)(snapAreas[0].Height * workingArea.Height);
+            MoveActiveWindowTo(newX, newY, newW, newH);
+        }
+        #endregion
+
+        #region Snap active window screen to all 8 directions
+        public static void MoveActiveWindowToTop()
+        {
+            SnapActiveWindow(SnapDirection.Top);
         }
 
         public static void MoveActiveWindowToBottom()
         {
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
-            MoveActiveWindowTo(workingArea.X, workingArea.Y + workingArea.Height / 2, workingArea.Width, workingArea.Height / 2);
+            SnapActiveWindow(SnapDirection.Bottom);
         }
 
         public static void MoveActiveWindowToLeft()
         {
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
-            MoveActiveWindowTo(workingArea.X, workingArea.Y, workingArea.Width / 2, workingArea.Height);
+            SnapActiveWindow(SnapDirection.Left);
         }
 
         public static void MoveActiveWindowToRight()
         {
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
-            MoveActiveWindowTo(workingArea.X + workingArea.Width / 2, workingArea.Y, workingArea.Width / 2, workingArea.Height);
+            SnapActiveWindow(SnapDirection.Right);
         }
 
         public static void MoveActiveWindowToTopLeft()
         {
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
-            MoveActiveWindowTo(workingArea.X, workingArea.Y, workingArea.Width / 2, workingArea.Height / 2);
+            SnapActiveWindow(SnapDirection.TopLeft);
         }
 
         public static void MoveActiveWindowToTopRight()
         {
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
-            MoveActiveWindowTo(workingArea.X + workingArea.Width / 2, workingArea.Y, workingArea.Width / 2, workingArea.Height / 2);
+            SnapActiveWindow(SnapDirection.TopRight);
         }
 
         public static void MoveActiveWindowToBottomLeft()
         {
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
-            MoveActiveWindowTo(workingArea.X, workingArea.Y + workingArea.Height / 2, workingArea.Width / 2, workingArea.Height / 2);
+            SnapActiveWindow(SnapDirection.BottomLeft);
         }
 
         public static void MoveActiveWindowToBottomRight()
         {
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
-            MoveActiveWindowTo(workingArea.X + workingArea.Width / 2, workingArea.Y + workingArea.Height / 2, workingArea.Width / 2, workingArea.Height / 2);
+            SnapActiveWindow(SnapDirection.BottomRight);
         }
         #endregion
 
@@ -240,6 +328,22 @@ namespace FreshTools
             Rectangle childRect = rect.ToRectangle();
 
             return GetScreenContainingWindow(childRect);
+        }
+
+        public static RectangleF GetActiveWindowRelativeRectangleF()
+        {
+            IntPtr handle = GetForegroundWindow();
+            Rect rect = new Rect();
+            GetWindowRect(handle, ref rect);
+            Rectangle childRect = rect.ToRectangle();
+
+            Rectangle workingSpace = GetScreenContainingWindow(childRect).WorkingArea;
+
+            float relativeX = 1f * (childRect.X - positionOffset.X) / workingSpace.Width;
+            float relativeY = 1f * (childRect.Y - positionOffset.Y) / workingSpace.Height;
+            float relativeW = 1f * childRect.Width / workingSpace.Width;
+            float relativeH = 1f * childRect.Height / workingSpace.Height;
+            return new RectangleF(relativeX, relativeY, relativeW, relativeH);
         }
 
         /// <summary>
@@ -288,7 +392,6 @@ namespace FreshTools
             return screen;
         }
 
-
         //these probably only NEED to be calculated once (Assuming the screens dont move or change)
         public static Screen GetLeftMostScreen()
         {
@@ -315,5 +418,17 @@ namespace FreshTools
             return Screen.PrimaryScreen.Bounds.Height - Screen.PrimaryScreen.WorkingArea.Height;
         }
         #endregion
+
+        private enum SnapDirection
+        {
+            Top,
+            Right,
+            Bottom,
+            Left,
+            TopLeft,
+            TopRight,
+            BottomLeft,
+            BottomRight,
+        }
     }
 }
