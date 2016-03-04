@@ -1,6 +1,6 @@
 ##Fresh Tools
 ###Description
-v.0.1
+v.0.2
 
 This is a collection of tools and code archives for doing usefull stuff that can be controlled via notification icon. 
 
@@ -9,6 +9,9 @@ This is a collection of tools and code archives for doing usefull stuff that can
 
 - Code for creating global hotkeys.
 - Code for static LogSystem that can write to a set of rolling log files.
+- Code for using FixedLengthArrays
+- Code for reading and writing from internal 'script' files. Used for doccumented config files.
+- Code for profiling code
 
 ###Future:
 - Tool to monitoring a set of websites tracking up and down times.
