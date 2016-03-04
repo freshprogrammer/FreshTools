@@ -11,6 +11,13 @@ namespace FreshTools
     /// </summary>
     static class WindowManager
     {
+        //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
+        private static Point positionOffset = new Point(7, 0);
+        private static Point resizeOffset = new Point(14, 7);
+
+        public static bool wrapLeftRightScreens = true;
+
+        #region External functions
         [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
 
@@ -37,13 +44,9 @@ namespace FreshTools
 
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
         public static extern IntPtr SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
+        #endregion
 
-        //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
-        private static Point positionOffset = new Point(7, 0);
-        private static Point resizeOffset = new Point(14, 7);
-
-        public static bool wrapLeftRightScreens = true;
-
+        #region Move Window Between screens
         public static void MoveActiveWindowToRightScreen()
         {
             MoveActiveWindowOffScreenInDirection(new Point(1,0));
@@ -90,7 +93,91 @@ namespace FreshTools
             MoveActiveWindowToScreen(newScreen);
         }
 
-        #region Move window to all 8 directions
+        /// <summary>
+        /// Move window to new screen and scale it as necisarry
+        /// </summary>
+        /// <param name="newScreen"></param>
+        public static void MoveActiveWindowToScreen(Screen newScreen)
+        {
+            IntPtr handle = GetForegroundWindow();
+            Rect rect = new Rect();
+            GetWindowRect(handle, ref rect);
+            Rectangle childRect = rect.ToRectangle();
+
+            Screen currentScreen = GetScreenContainingWindow(childRect);
+            Rectangle currentWorkingArea = currentScreen.WorkingArea;
+
+            double xPosPercentage = (1.0*childRect.X - currentWorkingArea.X) / currentWorkingArea.Width;
+            double yPosPercentage = (1.0 * childRect.Y - currentWorkingArea.Y) / currentWorkingArea.Height;
+            int newX = (int)(newScreen.WorkingArea.X + newScreen.WorkingArea.Width * xPosPercentage);
+            int newY = (int)(newScreen.WorkingArea.Y + newScreen.WorkingArea.Height * yPosPercentage);
+            
+            if (newScreen.WorkingArea.Width != currentScreen.WorkingArea.Width || newScreen.WorkingArea.Height != currentScreen.WorkingArea.Height)
+            {
+                //different size working area/resolution
+                //scale window to new resolution
+                double widthPercentage = 1.0 * rect.Width / currentWorkingArea.Width;
+                double heightPercentage = 1.0 * rect.Height / currentWorkingArea.Height;
+                int newWidth = (int)(newScreen.WorkingArea.Width * widthPercentage);
+                int newHeight = (int)(newScreen.WorkingArea.Height * heightPercentage);
+                MoveActiveWindowTo(newX, newY, newWidth, newHeight, false);
+            }
+            else
+                MoveActiveWindowTo(newX, newY, false);
+
+        }
+#endregion
+
+        #region Window movement logic
+        public static void MoveActiveWindowTo(int x, int y, bool includePosOffset = true)
+        {
+            const short SWP_NOSIZE = 1;
+            //const short SWP_NOMOVE = 0X2;
+            const short SWP_NOZORDER = 0X4;
+            const int SWP_SHOWWINDOW = 0x0040;
+
+            const int cx = 0;
+            const int cy = 0;
+
+            IntPtr handle = GetForegroundWindow();
+            if (handle != IntPtr.Zero)
+            {
+                if (includePosOffset)
+                {
+                    x -= positionOffset.X;
+                    y -= positionOffset.Y;
+                }
+
+                SetWindowPos(handle, 0, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+            }
+        }
+
+        //if moving window on same screen you need to offset its pos. If moving window between screens the x,y pos should already be know and not need to be re-offset
+        public static void MoveActiveWindowTo(int x, int y, int newWidth, int newHeight, bool includePosOffset=true)
+        {
+            const short SWP_NOSIZE = 0;
+            //const short SWP_NOMOVE = 0X2;
+            const short SWP_NOZORDER = 0X4;
+            const int SWP_SHOWWINDOW = 0x0040;
+
+            IntPtr handle = GetForegroundWindow();
+            if (handle != IntPtr.Zero)
+            {
+                if (includePosOffset)
+                {
+                    x -= positionOffset.X;
+                    y -= positionOffset.Y;
+
+                    newWidth += resizeOffset.X;
+                    newHeight += resizeOffset.Y;
+                }
+
+                SetWindowPos(handle, 0, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+            }
+        }
+        #endregion
+
+        #region Move window window screen - to all 8 directions
         public static void MoveActiveWindowToTop()
         {
             Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
@@ -140,87 +227,11 @@ namespace FreshTools
         }
         #endregion
 
+        #region Calculate Screen(s) info
         /// <summary>
-        /// Move window to new screen and scale it as necisarry
+        /// Returns the screen containing the currently active window
         /// </summary>
-        /// <param name="newScreen"></param>
-        public static void MoveActiveWindowToScreen(Screen newScreen)
-        {
-            IntPtr handle = GetForegroundWindow();
-            Rect rect = new Rect();
-            GetWindowRect(handle, ref rect);
-            Rectangle childRect = rect.ToRectangle();
-
-            Screen currentScreen = GetScreenContainingWindow(childRect);
-            Rectangle currentWorkingArea = currentScreen.WorkingArea;
-
-            double xPosPercentage = (1.0*childRect.X - currentWorkingArea.X) / currentWorkingArea.Width;
-            double yPosPercentage = (1.0 * childRect.Y - currentWorkingArea.Y) / currentWorkingArea.Height;
-            int newX = (int)(newScreen.WorkingArea.X + newScreen.WorkingArea.Width * xPosPercentage);
-            int newY = (int)(newScreen.WorkingArea.Y + newScreen.WorkingArea.Height * yPosPercentage);
-            
-            if (newScreen.WorkingArea.Width != currentScreen.WorkingArea.Width || newScreen.WorkingArea.Height != currentScreen.WorkingArea.Height)
-            {
-                //different size working area/resolution
-                //scale window to new resolution
-                double widthPercentage = 1.0 * rect.Width / currentWorkingArea.Width;
-                double heightPercentage = 1.0 * rect.Height / currentWorkingArea.Height;
-                int newWidth = (int)(newScreen.WorkingArea.Width * widthPercentage);
-                int newHeight = (int)(newScreen.WorkingArea.Height * heightPercentage);
-                MoveActiveWindowTo(newX, newY, newWidth, newHeight, false);
-            }
-            else
-                MoveActiveWindowTo(newX, newY, false);
-
-        }
-
-        public static void MoveActiveWindowTo(int x, int y, bool includePosOffset = true)
-        {
-            const short SWP_NOSIZE = 1;
-            //const short SWP_NOMOVE = 0X2;
-            const short SWP_NOZORDER = 0X4;
-            const int SWP_SHOWWINDOW = 0x0040;
-
-            const int cx = 0;
-            const int cy = 0;
-
-            IntPtr handle = GetForegroundWindow();
-            if (handle != IntPtr.Zero)
-            {
-                if (includePosOffset)
-                {
-                    x -= positionOffset.X;
-                    y -= positionOffset.Y;
-                }
-
-                SetWindowPos(handle, 0, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
-            }
-        }
-
-        //if moving window on same screen you need to offset its pos. If moving window between screens the x,y pos should already be know and not need to be re-offset
-        public static void MoveActiveWindowTo(int x, int y, int newWidth, int newHeight, bool includePosOffset=true)
-        {
-            const short SWP_NOSIZE = 0;
-            //const short SWP_NOMOVE = 0X2;
-            const short SWP_NOZORDER = 0X4;
-            const int SWP_SHOWWINDOW = 0x0040;
-
-            IntPtr handle = GetForegroundWindow();
-            if (handle != IntPtr.Zero)
-            {
-                if (includePosOffset)
-                {
-                    x -= positionOffset.X;
-                    y -= positionOffset.Y;
-
-                    newWidth += resizeOffset.X;
-                    newHeight += resizeOffset.Y;
-                }
-
-                SetWindowPos(handle, 0, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
-            }
-        }
-
+        /// <returns></returns>
         public static Screen GetScreenActiveWindowIsOn()
         {
             IntPtr handle = GetForegroundWindow();
@@ -277,6 +288,7 @@ namespace FreshTools
             return screen;
         }
 
+
         //these probably only NEED to be calculated once (Assuming the screens dont move or change)
         public static Screen GetLeftMostScreen()
         {
@@ -302,5 +314,6 @@ namespace FreshTools
         {
             return Screen.PrimaryScreen.Bounds.Height - Screen.PrimaryScreen.WorkingArea.Height;
         }
+        #endregion
     }
 }
