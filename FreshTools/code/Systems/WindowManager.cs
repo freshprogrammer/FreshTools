@@ -12,6 +12,8 @@ namespace FreshTools
     /// </summary>
     public static class WindowManager
     {
+        const float ComparisonRoundingLimit = 0.001f;//this will be to be broader for lower resolutions since they have less pixes to round to
+
         public static bool WrapLeftRightScreens = true;
 
         private static List<RectangleF> cornerSizes;
@@ -26,17 +28,17 @@ namespace FreshTools
         {
             cornerSizes = new List<RectangleF>(3);
             cornerSizes.Add(new RectangleF(0, 0, 0.5f,  0.5f));
-            cornerSizes.Add(new RectangleF(0, 0, 0.33f, 0.5f));
-            cornerSizes.Add(new RectangleF(0, 0, 0.67f, 0.5f));
+            cornerSizes.Add(new RectangleF(0, 0, 0.667f, 0.5f));
+            cornerSizes.Add(new RectangleF(0, 0, 0.333f, 0.5f));
             
             sideSizes = new List<RectangleF>(3);
             sideSizes.Add(new RectangleF(0, 0, 0.5f,  1));
-            sideSizes.Add(new RectangleF(0, 0, 0.33f, 1));
-            sideSizes.Add(new RectangleF(0, 0, 0.67f, 1));
+            sideSizes.Add(new RectangleF(0, 0, 0.667f, 1));
+            sideSizes.Add(new RectangleF(0, 0, 0.333f, 1));
 
             topSizes = new List<RectangleF>(2);
             topSizes.Add(new RectangleF(0, 0, 1, 0.5f));
-            topSizes.Add(new RectangleF(0.33f, 0, 0.34f, 0.5f));
+            topSizes.Add(new RectangleF(0.33f, 0, 0.334f, 0.5f));
         }
 
         #region External functions
@@ -201,7 +203,7 @@ namespace FreshTools
         private static void SnapActiveWindow(SnapDirection dir)
         {
             Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
-            RectangleF relativeRectangle = GetActiveWindowRelativeRectangleF();
+            RectangleF activeRelativeRectangle = GetActiveWindowRelativeRectangleF();
 
             RectangleF[] snapAreas = null;
             switch (dir)
@@ -263,12 +265,21 @@ namespace FreshTools
                     break;
             }
 
-            LogSystem.Log(dir + " SnapArea = " + snapAreas[0]);
+            //if already snapped to 2 than use 3, ect
+            int snapIndex = 0;
+            for (int i = snapAreas.Length-2; i>=0 ; i--)
+            {
+                if(CloseEnough(activeRelativeRectangle, snapAreas[i]))
+                {
+                    snapIndex = ++i;
+                    break;
+                }
+            }
 
-            int newX = (int)(snapAreas[0].X * workingArea.Width);
-            int newY = (int)(snapAreas[0].Y * workingArea.Height);
-            int newW = (int)(snapAreas[0].Width * workingArea.Width);
-            int newH = (int)(snapAreas[0].Height * workingArea.Height);
+            int newX = workingArea.X + (int)(snapAreas[snapIndex].X * workingArea.Width);
+            int newY = workingArea.Y + (int)(snapAreas[snapIndex].Y * workingArea.Height);
+            int newW = (int)(snapAreas[snapIndex].Width * workingArea.Width);
+            int newH = (int)(snapAreas[snapIndex].Height * workingArea.Height);
             MoveActiveWindowTo(newX, newY, newW, newH);
         }
         #endregion
@@ -315,7 +326,7 @@ namespace FreshTools
         }
         #endregion
 
-        #region Calculate Screen(s) info
+        #region Calculate Screen(s) info and Generics
         /// <summary>
         /// Returns the screen containing the currently active window
         /// </summary>
@@ -339,10 +350,10 @@ namespace FreshTools
 
             Rectangle workingSpace = GetScreenContainingWindow(childRect).WorkingArea;
 
-            float relativeX = 1f * (childRect.X - positionOffset.X) / workingSpace.Width;
-            float relativeY = 1f * (childRect.Y - positionOffset.Y) / workingSpace.Height;
-            float relativeW = 1f * childRect.Width / workingSpace.Width;
-            float relativeH = 1f * childRect.Height / workingSpace.Height;
+            float relativeX = 1f * (childRect.X - positionOffset.X - workingSpace.X) / workingSpace.Width;
+            float relativeY = 1f * (childRect.Y - positionOffset.Y - workingSpace.Y) / workingSpace.Height;
+            float relativeW = 1f * (childRect.Width - resizeOffset.X) / workingSpace.Width;
+            float relativeH = 1f * (childRect.Height - resizeOffset.Y) / workingSpace.Height;
             return new RectangleF(relativeX, relativeY, relativeW, relativeH);
         }
 
@@ -416,6 +427,16 @@ namespace FreshTools
         public static int GetTaskbarHeight()
         {
             return Screen.PrimaryScreen.Bounds.Height - Screen.PrimaryScreen.WorkingArea.Height;
+        }
+
+        public static bool CloseEnough(RectangleF a, RectangleF b)
+        {
+            if (Math.Abs(a.X - b.X) < ComparisonRoundingLimit)
+                if (Math.Abs(a.Y - b.Y) < ComparisonRoundingLimit)
+                    if (Math.Abs(a.Width - b.Width) < ComparisonRoundingLimit)
+                        if (Math.Abs(a.Height - b.Height) < ComparisonRoundingLimit)
+                            return true;
+            return false;
         }
         #endregion
 
