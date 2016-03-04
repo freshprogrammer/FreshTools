@@ -181,6 +181,9 @@ namespace FreshTools
             const short SWP_NOZORDER = 0X4;
             const int SWP_SHOWWINDOW = 0x0040;
 
+            const int cx = 0;
+            const int cy = 0;
+
             IntPtr handle = GetForegroundWindow();
             if (handle != IntPtr.Zero)
             {
@@ -190,8 +193,6 @@ namespace FreshTools
                     y -= positionOffset.Y;
                 }
 
-                const int cx = 0;
-                const int cy = 0;
                 SetWindowPos(handle, 0, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
             }
         }
@@ -211,9 +212,12 @@ namespace FreshTools
                 {
                     x -= positionOffset.X;
                     y -= positionOffset.Y;
+
+                    newWidth += resizeOffset.X;
+                    newHeight += resizeOffset.Y;
                 }
 
-                SetWindowPos(handle, 0, x, y, newWidth + resizeOffset.X, newHeight + resizeOffset.Y, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                SetWindowPos(handle, 0, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
             }
         }
 
