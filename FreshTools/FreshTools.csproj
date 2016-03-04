@@ -50,7 +50,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject />
+    <StartupObject>FreshTools.MainForm</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -65,6 +65,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="code\FixedSizeArraycs.cs" />
+    <Compile Include="code\FreshArchives.cs" />
     <Compile Include="code\FreshMath.cs" />
     <Compile Include="code\HotKeyManager.cs" />
     <Compile Include="code\LogSystem.cs" />
@@ -73,7 +74,6 @@
     </Compile>
     <Compile Include="code\IdleMonitor.cs" />
     <Compile Include="code\Profiler.cs" />
-    <Compile Include="code\Program.cs" />
     <Compile Include="code\Scripting\FreshScript.cs" />
     <Compile Include="code\Scripting\Variable.cs" />
     <Compile Include="code\Scripting\VariableLibrary.cs" />

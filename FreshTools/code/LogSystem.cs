@@ -51,7 +51,7 @@ namespace FreshTools
             //create any necisarry directories for logs
             Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
 
-            Log(Assembly.GetExecutingAssembly().GetName().Name + " (v" + Assembly.GetExecutingAssembly().GetName().Version + ")");
+            Log(Assembly.GetExecutingAssembly().GetName().Name + " (v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version) + ")");
         }
 
         public static void Log(string log)

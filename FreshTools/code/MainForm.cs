@@ -1,8 +1,8 @@
-﻿using System.Windows.Forms;
-using System.Threading;
+﻿using System;
 using System.Drawing;
 using System.Reflection;
-using System;
+using System.Threading;
+using System.Windows.Forms;
 
 namespace FreshTools
 {
@@ -39,7 +39,7 @@ namespace FreshTools
             freshToolsNotifyIcon.Visible = true;
 
             // Create all context menu items and add them to notification tray icon
-            MenuItem titleMenuItem = new MenuItem("Fresh Monitor");
+            MenuItem titleMenuItem = new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version));
             MenuItem breakMenuItem = new MenuItem("-");
             startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
@@ -70,6 +70,15 @@ namespace FreshTools
             pollingThread.Start();
 
             LogSystem.Log("FreshTools started sucsessfully");
+        }
+
+        /// <summary>
+        /// The main entry point for the application.
+        /// </summary>
+        [STAThread]
+        static void Main(string[] args)
+        {
+            Application.Run(new MainForm());
         }
 
         public void LoadConfig()
