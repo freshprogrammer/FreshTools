@@ -153,7 +153,7 @@ namespace FreshTools
         {
             //register hotkey(s)
             //GenericsClass.LogSystem("Registering Hotkeys");
-            HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyPressed);
+            HotKeyManager.GenericHotKeyPressedHandler += new EventHandler<HotKeyEventArgs>(HotKeyPressed);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1);
@@ -166,7 +166,7 @@ namespace FreshTools
             HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
         }
 
-        static void HotKeyPressed(object sender, HotKeyEventArgs args)
+        private static void HotKeyPressed(object sender, HotKeyEventArgs args)
         {
             try
             {
@@ -213,7 +213,7 @@ namespace FreshTools
                 else //unknown hot key pressed
                 {
                     //uncaught hotkey
-                    LogSystem.Log("HotKeyManager_HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
+                    LogSystem.Log("MainForm.HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
                 }
             }
             catch (Exception e)
