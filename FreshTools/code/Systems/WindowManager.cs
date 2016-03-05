@@ -140,10 +140,12 @@ namespace FreshTools
             {
                 //different size working area/resolution
                 //scale window to new resolution
-                double widthPercentage = 1.0 * rect.Width / currentWorkingArea.Width;
-                double heightPercentage = 1.0 * rect.Height / currentWorkingArea.Height;
+                double widthPercentage = 1.0 * (rect.Width - resizeOffset.X) / currentWorkingArea.Width;
+                double heightPercentage = 1.0 * (rect.Height - resizeOffset.Y) / currentWorkingArea.Height;
                 int newWidth = (int)(newScreen.WorkingArea.Width * widthPercentage);
                 int newHeight = (int)(newScreen.WorkingArea.Height * heightPercentage);
+                newWidth += resizeOffset.X;
+                newHeight += resizeOffset.Y;
                 MoveActiveWindowTo(newX, newY, newWidth, newHeight, false);
             }
             else
