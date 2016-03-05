@@ -43,20 +43,21 @@ namespace FreshTools
             MenuItem breakMenuItem = new MenuItem("-");
             startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
-            MenuItem toggleMenuItem = new MenuItem("Toggle");
+            MenuItem windowHotKeysEnabledManagerMenuItem = new MenuItem("Window Control Hot Keys");
+            windowHotKeysEnabledManagerMenuItem.Checked = WindowManager.HotKeysEnabled;
             MenuItem quitMenuItem = new MenuItem("Quit");
             ContextMenu contextMenu = new ContextMenu();
             contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(breakMenuItem);
             contextMenu.MenuItems.Add(startIdlePreventionMenuItem);
-            contextMenu.MenuItems.Add(toggleMenuItem);
+            contextMenu.MenuItems.Add(windowHotKeysEnabledManagerMenuItem);
             contextMenu.MenuItems.Add(quitMenuItem);
             freshToolsNotifyIcon.ContextMenu = contextMenu;
 
             // Wire up menu items
             startIdlePreventionMenuItem.Click += startIdlePreventionMenuItem_Click;
             stopIdlePreventionMenuItem.Click += stopIdlePreventionMenuItem_Click;
-            toggleMenuItem.Click += toggleMenuItem_Click;
+            windowHotKeysEnabledManagerMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
 
             //  Hide the form because we don't need it, this is a notification tray application
@@ -85,8 +86,11 @@ namespace FreshTools
         {
             settingsFile = new VariablesFile(configFilePath, null, false);
             VariableLibrary vars = settingsFile.variables;
+            
+            //load variables
+            bool windowHotKeys = WindowManager.HotKeysEnabled;
+            WindowManager.HotKeysEnabled = vars.GetVariable("EnableWindowManager", ref windowHotKeys, true).Boolean;
 
-            //vars.GetVariable("EnableWindowManager", ref EnableWindowManager, true);
             //vars.GetVariable("testVariable", ref testVariable, true);
         }
 
@@ -95,7 +99,7 @@ namespace FreshTools
         /// </summary>
         private void SaveVariables()
         {
-            //settingsFile.variables.SetValue("EnableWindowManager", "" + EnableWindowManager);
+            settingsFile.variables.SetValue("EnableWindowManager", "" + WindowManager.HotKeysEnabled);
             //settingsFile.variables.SetValue("testVariable", "" + testVariable);
 
             settingsFile.SaveAs(configFilePath);
@@ -129,9 +133,11 @@ namespace FreshTools
             freshToolsNotifyIcon.ContextMenu.MenuItems.Add(index, startIdlePreventionMenuItem);
         }
 
-        private void toggleMenuItem_Click(object sender, EventArgs e)
+        private void windowHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
         {
-            sitePollingEnabled = !sitePollingEnabled;
+            MenuItem i = (MenuItem)sender;
+            i.Checked = !i.Checked;
+            WindowManager.HotKeysEnabled = i.Checked;
         }
 
         /// <summary>
@@ -144,6 +150,7 @@ namespace FreshTools
             LogSystem.Log("quitMenuItem_Click()");
             pollingThread.Abort();
             freshToolsNotifyIcon.Dispose();
+            SaveVariables();
             this.Close();
         }
         #endregion
@@ -155,8 +162,6 @@ namespace FreshTools
             //GenericsClass.LogSystem("Registering Hotkeys");
             HotKeyManager.GenericHotKeyPressedHandler += new EventHandler<HotKeyEventArgs>(GenericHotKeyPressed);
             HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.Oemtilde);
-
-            WindowManager.HotKeysEnabled = true;
         }
 
         private static void GenericHotKeyPressed(object sender, HotKeyEventArgs args)
