@@ -151,7 +151,7 @@ namespace FreshTools
         }
     }
 
-    protected struct HotKey
+    public struct HotKey
     {
         public int Id;
         public KeyModifiers Modifiers;
