@@ -15,6 +15,9 @@ namespace FreshTools
         const float ComparisonRoundingLimit = 0.001f;//this will be to be broader for lower resolutions since they have less pixes to round to
 
         public static bool WrapLeftRightScreens = true;
+        public static bool HotKeysEnabled { get { return hotKeysEnabled; } set { if (value)EnableHotKeys(); else DisableHotKeys(); } }
+
+        private static bool hotKeysEnabled = false;
 
         private static List<RectangleF> cornerSizes;
         private static List<RectangleF> topSizes;
@@ -24,6 +27,7 @@ namespace FreshTools
         private static Point positionOffset = new Point(-7, 0);
         private static Point resizeOffset = new Point(14, 7);
 
+        #region Setup and teardown
         static WindowManager()
         {
             cornerSizes = new List<RectangleF>(3);
@@ -40,6 +44,43 @@ namespace FreshTools
             topSizes.Add(new RectangleF(0, 0, 1, 0.5f));
             topSizes.Add(new RectangleF(0.33f, 0, 0.334f, 0.5f));
         }
+
+        private static void EnableHotKeys()
+        {
+            if (!hotKeysEnabled)
+            {
+                hotKeysEnabled = true;
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A, MoveActiveWindowToLeftScreen);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S, MoveActiveWindowToRightScreen);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1, MoveActiveWindowToBottomLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2, MoveActiveWindowToBottom);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3, MoveActiveWindowToBottomRight);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad4, MoveActiveWindowToLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad6, MoveActiveWindowToRight);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7, MoveActiveWindowToTopLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8, MoveActiveWindowToTop);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9, MoveActiveWindowToTopRight);
+            }
+        }
+
+        private static void DisableHotKeys()
+        {
+            if (hotKeysEnabled)
+            {
+                hotKeysEnabled = false;
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad4);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad6);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
+            }
+        }
+        #endregion
 
         #region External functions
         [DllImport("user32.dll")]
@@ -71,12 +112,12 @@ namespace FreshTools
         #endregion
 
         #region Move Window Between screens
-        public static void MoveActiveWindowToRightScreen()
+        public static void MoveActiveWindowToRightScreen(object o, HotKeyEventArgs args)
         {
             MoveActiveWindowOffScreenInDirection(new Point(1,0));
         }
 
-        public static void MoveActiveWindowToLeftScreen()
+        public static void MoveActiveWindowToLeftScreen(object o, HotKeyEventArgs args)
         {
             MoveActiveWindowOffScreenInDirection(new Point(-1,0));
         }
@@ -287,42 +328,42 @@ namespace FreshTools
         #endregion
 
         #region Snap active window screen to all 8 directions
-        public static void MoveActiveWindowToTop()
+        public static void MoveActiveWindowToTop(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Top);
         }
 
-        public static void MoveActiveWindowToBottom()
+        public static void MoveActiveWindowToBottom(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Bottom);
         }
 
-        public static void MoveActiveWindowToLeft()
+        public static void MoveActiveWindowToLeft(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Left);
         }
 
-        public static void MoveActiveWindowToRight()
+        public static void MoveActiveWindowToRight(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Right);
         }
 
-        public static void MoveActiveWindowToTopLeft()
+        public static void MoveActiveWindowToTopLeft(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.TopLeft);
         }
 
-        public static void MoveActiveWindowToTopRight()
+        public static void MoveActiveWindowToTopRight(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.TopRight);
         }
 
-        public static void MoveActiveWindowToBottomLeft()
+        public static void MoveActiveWindowToBottomLeft(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.BottomLeft);
         }
 
-        public static void MoveActiveWindowToBottomRight()
+        public static void MoveActiveWindowToBottomRight(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.BottomRight);
         }
