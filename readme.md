@@ -1,6 +1,6 @@
 ##Fresh Tools
 ###Description
-v.0.2
+v.0.3
 
 This is a collection of tools and code archives for doing usefull stuff that can be controlled via notification icon. 
 
