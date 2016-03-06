@@ -43,20 +43,21 @@ namespace FreshTools
             MenuItem breakMenuItem = new MenuItem("-");
             startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
-            MenuItem toggleMenuItem = new MenuItem("Toggle");
+            MenuItem windowHotKeysEnabledManagerMenuItem = new MenuItem("Window Control Hot Keys");
+            windowHotKeysEnabledManagerMenuItem.Checked = WindowManager.HotKeysEnabled;
             MenuItem quitMenuItem = new MenuItem("Quit");
             ContextMenu contextMenu = new ContextMenu();
             contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(breakMenuItem);
             contextMenu.MenuItems.Add(startIdlePreventionMenuItem);
-            contextMenu.MenuItems.Add(toggleMenuItem);
+            contextMenu.MenuItems.Add(windowHotKeysEnabledManagerMenuItem);
             contextMenu.MenuItems.Add(quitMenuItem);
             freshToolsNotifyIcon.ContextMenu = contextMenu;
 
             // Wire up menu items
             startIdlePreventionMenuItem.Click += startIdlePreventionMenuItem_Click;
             stopIdlePreventionMenuItem.Click += stopIdlePreventionMenuItem_Click;
-            toggleMenuItem.Click += toggleMenuItem_Click;
+            windowHotKeysEnabledManagerMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
 
             //  Hide the form because we don't need it, this is a notification tray application
@@ -85,8 +86,11 @@ namespace FreshTools
         {
             settingsFile = new VariablesFile(configFilePath, null, false);
             VariableLibrary vars = settingsFile.variables;
+            
+            //load variables
+            bool windowHotKeys = WindowManager.HotKeysEnabled;
+            WindowManager.HotKeysEnabled = vars.GetVariable("EnableWindowManager", ref windowHotKeys, true).Boolean;
 
-            //vars.GetVariable("EnableWindowManager", ref EnableWindowManager, true);
             //vars.GetVariable("testVariable", ref testVariable, true);
         }
 
@@ -95,7 +99,7 @@ namespace FreshTools
         /// </summary>
         private void SaveVariables()
         {
-            //settingsFile.variables.SetValue("EnableWindowManager", "" + EnableWindowManager);
+            settingsFile.variables.SetValue("EnableWindowManager", "" + WindowManager.HotKeysEnabled);
             //settingsFile.variables.SetValue("testVariable", "" + testVariable);
 
             settingsFile.SaveAs(configFilePath);
@@ -129,9 +133,11 @@ namespace FreshTools
             freshToolsNotifyIcon.ContextMenu.MenuItems.Add(index, startIdlePreventionMenuItem);
         }
 
-        private void toggleMenuItem_Click(object sender, EventArgs e)
+        private void windowHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
         {
-            sitePollingEnabled = !sitePollingEnabled;
+            MenuItem i = (MenuItem)sender;
+            i.Checked = !i.Checked;
+            WindowManager.HotKeysEnabled = i.Checked;
         }
 
         /// <summary>
@@ -144,6 +150,7 @@ namespace FreshTools
             LogSystem.Log("quitMenuItem_Click()");
             pollingThread.Abort();
             freshToolsNotifyIcon.Dispose();
+            SaveVariables();
             this.Close();
         }
         #endregion
@@ -153,67 +160,22 @@ namespace FreshTools
         {
             //register hotkey(s)
             //GenericsClass.LogSystem("Registering Hotkeys");
-            HotKeyManager.HotKeyPressed += new EventHandler<HotKeyEventArgs>(HotKeyPressed);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad4);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad6);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8);
-            HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
+            HotKeyManager.GenericHotKeyPressedHandler += new EventHandler<HotKeyEventArgs>(GenericHotKeyPressed);
+            HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.Oemtilde);
         }
 
-        static void HotKeyPressed(object sender, HotKeyEventArgs args)
+        private static void GenericHotKeyPressed(object sender, HotKeyEventArgs args)
         {
             try
             {
-                if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.A)
+                if (args.Modifiers == (KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift) && args.Key == Keys.Oemtilde)
                 {
-                    WindowManager.MoveActiveWindowToLeftScreen();
-                }
-                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.S)
-                {
-                    WindowManager.MoveActiveWindowToRightScreen();
-                }
-                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad1)
-                {
-                    WindowManager.MoveActiveWindowToBottomLeft();
-                }
-                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad2)
-                {
-                    WindowManager.MoveActiveWindowToBottom();
-                }
-                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad3)
-                {
-                    WindowManager.MoveActiveWindowToBottomRight();
-                }
-                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad4)
-                {
-                    WindowManager.MoveActiveWindowToLeft();
-                }
-                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad6)
-                {
-                    WindowManager.MoveActiveWindowToRight();
-                }
-                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad7)
-                {
-                    WindowManager.MoveActiveWindowToTopLeft();
-                }
-                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad8)
-                {
-                    WindowManager.MoveActiveWindowToTop();
-                }
-                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Alt) && args.Key == Keys.NumPad9)
-                {
-                    WindowManager.MoveActiveWindowToTopRight();
+                    LogSystem.Log("MainForm.HotKeyPressed() - Super Tilde - " + args.Modifiers + "+" + args.Key + "");
                 }
                 else //unknown hot key pressed
                 {
                     //uncaught hotkey
-                    LogSystem.Log("HotKeyManager_HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
+                    LogSystem.Log("MainForm.HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
                 }
             }
             catch (Exception e)
