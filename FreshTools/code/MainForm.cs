@@ -18,10 +18,7 @@ namespace FreshTools
         private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
         private VariablesFile settingsFile;
 
-        //Threads
-        private Thread pollingThread;
-        private bool sitePollingEnabled = true;
-
+        //Tools
         private IdleMonitor idleMonitor;
 
         public MainForm()
@@ -65,10 +62,6 @@ namespace FreshTools
             this.ShowInTaskbar = false;
 
             RegisterHotkeys();
-
-            // Start worker thread that pulls HDD activity
-            pollingThread = new Thread(new ThreadStart(PollingThread));
-            pollingThread.Start();
 
             LogSystem.Log("FreshTools started sucsessfully");
         }
@@ -148,7 +141,6 @@ namespace FreshTools
         private void quitMenuItem_Click(object sender, EventArgs e)
         {
             LogSystem.Log("quitMenuItem_Click()");
-            pollingThread.Abort();
             freshToolsNotifyIcon.Dispose();
             SaveVariables();
             this.Close();
@@ -181,31 +173,6 @@ namespace FreshTools
             catch (Exception e)
             {
                 LogSystem.Log("Exception#" + LogSystem.IncrementExceptionCount() + " in MainForm.HotKeyPressed(object,HotKeyEventArgs) - " + e);
-            }
-        }
-        #endregion
-
-        #region Polling thread
-        /// <summary>
-        /// This is the thread that calls the site poller
-        /// </summary>
-        public void PollingThread()
-        {
-            try
-            {
-                // Main loop where all the magic happens
-                while (true)
-                {
-                    if (sitePollingEnabled)
-                    {
-
-                    }
-                    Thread.Sleep(100);
-                }
-            }
-            catch (ThreadAbortException)
-            {
-                // Thead was aborted
             }
         }
         #endregion
