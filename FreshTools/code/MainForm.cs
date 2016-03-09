@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace FreshTools
 {
-    public class MainForm : Form
+    public class MainForm : ApplicationContext
     {
         //Notification Icon
         private Icon freshToolsIcon;
@@ -27,13 +27,23 @@ namespace FreshTools
             LogSystem.Init();
             LoadConfig();
 
+            Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
+            InitializeNotificationIcon();
+            freshToolsNotifyIcon.Visible = true;
+
+            RegisterHotkeys();
+
+            LogSystem.Log("FreshTools started sucsessfully");
+        }
+
+        public void InitializeNotificationIcon()
+        {
             // Load icons from embeded resources
             freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
 
             // Create notify icons and assign idle icon and show it
             freshToolsNotifyIcon = new NotifyIcon();
             freshToolsNotifyIcon.Icon = freshToolsIcon;
-            freshToolsNotifyIcon.Visible = true;
 
             // Create all context menu items and add them to notification tray icon
             MenuItem titleMenuItem = new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version));
@@ -56,14 +66,6 @@ namespace FreshTools
             stopIdlePreventionMenuItem.Click += stopIdlePreventionMenuItem_Click;
             windowHotKeysEnabledManagerMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
-
-            //  Hide the form because we don't need it, this is a notification tray application
-            this.WindowState = FormWindowState.Minimized;
-            this.ShowInTaskbar = false;
-
-            RegisterHotkeys();
-
-            LogSystem.Log("FreshTools started sucsessfully");
         }
 
         /// <summary>
@@ -72,6 +74,8 @@ namespace FreshTools
         [STAThread]
         static void Main(string[] args)
         {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new MainForm());
         }
 
@@ -143,9 +147,14 @@ namespace FreshTools
             LogSystem.Log("quitMenuItem_Click()");
             freshToolsNotifyIcon.Dispose();
             SaveVariables();
-            this.Close();
+            Application.Exit();
         }
         #endregion
+
+        private void OnApplicationExit(object sender, EventArgs args)
+        {
+            //cleanup
+        }
 
         #region HotKey Events
         private static void RegisterHotkeys()

@@ -68,9 +68,7 @@
     <Compile Include="code\Generics\FreshArchives.cs" />
     <Compile Include="code\Generics\FreshMath.cs" />
     <Compile Include="code\Generics\Profiler.cs" />
-    <Compile Include="code\MainForm.cs">
-      <SubType>Form</SubType>
-    </Compile>
+    <Compile Include="code\MainForm.cs" />
     <Compile Include="code\IdleMonitor.cs" />
     <Compile Include="code\Scripting\FreshScript.cs" />
     <Compile Include="code\Scripting\Variable.cs" />
