@@ -36,24 +36,31 @@ namespace FreshTools
             LogSystem.Log("FreshTools started sucsessfully");
         }
 
+        /// <summary>
+        /// Create NotificationIcon loading embeded icon and defining menu items
+        /// </summary>
         public void InitializeNotificationIcon()
         {
-            // Load icons from embeded resources
-            freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
-
             // Create notify icons and assign idle icon and show it
             freshToolsNotifyIcon = new NotifyIcon();
             freshToolsNotifyIcon.Text = "Fresh Tools";
+
+            // Load icons from embeded resources
+            freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
             freshToolsNotifyIcon.Icon = freshToolsIcon;
 
             // Create all context menu items and add them to notification tray icon
             MenuItem titleMenuItem = new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version));
             MenuItem breakMenuItem = new MenuItem("-");
+
             startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
+
             MenuItem windowHotKeysEnabledManagerMenuItem = new MenuItem("Window Control Hot Keys");
             windowHotKeysEnabledManagerMenuItem.Checked = WindowManager.HotKeysEnabled;
+
             MenuItem quitMenuItem = new MenuItem("Quit");
+
             ContextMenu contextMenu = new ContextMenu();
             contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(breakMenuItem);
