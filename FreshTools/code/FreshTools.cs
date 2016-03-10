@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace FreshTools
 {
-    public class MainForm : ApplicationContext
+    public class FreshTools : ApplicationContext
     {
         //Notification Icon
         private Icon freshToolsIcon;
@@ -21,9 +21,9 @@ namespace FreshTools
         //Tools
         private IdleMonitor idleMonitor;
 
-        public MainForm()
+        public FreshTools()
         {
-            Thread.CurrentThread.Name = "FreshTools MainForm Thread";
+            Thread.CurrentThread.Name = "FreshTools Thread";
             LogSystem.Init();
             LoadConfig();
 
@@ -84,7 +84,7 @@ namespace FreshTools
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new MainForm());
+            Application.Run(new FreshTools());
         }
 
         public void LoadConfig()
@@ -179,17 +179,17 @@ namespace FreshTools
             {
                 if (args.Modifiers == (KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift) && args.Key == Keys.Oemtilde)
                 {
-                    LogSystem.Log("MainForm.HotKeyPressed() - Super Tilde - " + args.Modifiers + "+" + args.Key + "");
+                    LogSystem.Log("FreshTools.HotKeyPressed() - Super Tilde - " + args.Modifiers + "+" + args.Key + "");
                 }
                 else //unknown hot key pressed
                 {
                     //uncaught hotkey
-                    LogSystem.Log("MainForm.HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
+                    LogSystem.Log("FreshTools.HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
                 }
             }
             catch (Exception e)
             {
-                LogSystem.Log("Exception#" + LogSystem.IncrementExceptionCount() + " in MainForm.HotKeyPressed(object,HotKeyEventArgs) - " + e);
+                LogSystem.Log("Exception#" + LogSystem.IncrementExceptionCount() + " in FreshTools.HotKeyPressed(object,HotKeyEventArgs) - " + e);
             }
         }
         #endregion

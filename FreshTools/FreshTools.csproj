@@ -50,7 +50,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>FreshTools.MainForm</StartupObject>
+    <StartupObject>FreshTools.FreshTools</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -64,11 +64,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="code\FreshTools.cs" />
     <Compile Include="code\Generics\FixedSizeArray.cs" />
     <Compile Include="code\Generics\FreshArchives.cs" />
     <Compile Include="code\Generics\FreshMath.cs" />
     <Compile Include="code\Generics\Profiler.cs" />
-    <Compile Include="code\MainForm.cs" />
     <Compile Include="code\IdleMonitor.cs" />
     <Compile Include="code\Scripting\FreshScript.cs" />
     <Compile Include="code\Scripting\Variable.cs" />
