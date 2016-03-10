@@ -43,6 +43,7 @@ namespace FreshTools
 
             // Create notify icons and assign idle icon and show it
             freshToolsNotifyIcon = new NotifyIcon();
+            freshToolsNotifyIcon.Text = "Fresh Tools";
             freshToolsNotifyIcon.Icon = freshToolsIcon;
 
             // Create all context menu items and add them to notification tray icon
