@@ -14,15 +14,22 @@ namespace FreshTools
 
         }
 
-        public bool TestPing(string host)
+        public bool TestPing(string url)
         {
+            url = url.Trim();
+            if (url.IndexOf("http://") != 0) url = "http://" + url;
+
             Ping ping = new Ping();
-            PingReply reply = ping.Send(host);
+            Uri uri = new Uri(url);
+            PingReply reply = ping.Send(uri.DnsSafeHost);
+            LogSystem.Log("TestPing('" + url + "') - " + reply.Status);
             return (reply.Status == IPStatus.Success);
         }
 
         public bool TestWebPage(string url)
         {
+            TestPing(url);
+
             url = url.Trim();
             if (url.IndexOf("http://") != 0) url = "http://" + url;
 
