@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Net;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
@@ -37,8 +38,10 @@ namespace FreshTools
 
             NetworkMonitor netMan = new NetworkMonitor();
             //netMan.TestWriteToDB();
-            netMan.TestWebPage("www.gooogle.com");
+            netMan.TestWebPage(NetworkMonitor.GetLocalIPAddress() + "");
+            netMan.TestWebPage(NetworkMonitor.GetDefaultGateway()+"");
             netMan.TestWebPage("http://www.checkupdown.com/accounts/grpb/B1394343/");
+            netMan.TestWebPage("www.gooogle.com");
             netMan.TestWebPage("8.8.8.8");
             netMan.TestWebPage("209.164.2.138");
         }

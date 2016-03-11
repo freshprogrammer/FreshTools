@@ -2,6 +2,8 @@
 using System.Data.SqlClient;
 using System.Net;
 using System.Windows.Forms;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 
 namespace FreshTools
 {
@@ -28,13 +30,28 @@ namespace FreshTools
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = WebRequestMethods.Http.Head;
                 request.Timeout = 2000;
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-                pageExists = response.StatusCode == HttpStatusCode.OK;
-                LogSystem.Log("TestWebPage('" + url + "') - " + response.StatusCode);
+
+                using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
+                {
+                    pageExists = response.StatusCode == HttpStatusCode.OK;
+                    LogSystem.Log("TestWebPage('" + url + "') - " + response.StatusCode);
+                }
+            }
+            catch (UriFormatException e)
+            {
+                LogSystem.Log("TestWebPage('" + url + "') - UriFormatException-" + e.Message);
             }
             catch (WebException e)
             {
-                LogSystem.Log("TestWebPage('" + url + "') - WebException-" + e.Message);
+                if (e.Message.IndexOf("(403)") != -1)
+                {
+                    LogSystem.Log("TestWebPage('" + url + "') - WebException-Forbidden-" + e.Message);
+                }
+                else
+                {
+                    //timed out
+                    LogSystem.Log("TestWebPage('" + url + "') - WebException-" + e.Message);
+                }
             }
 
             return pageExists;
@@ -64,6 +81,32 @@ namespace FreshTools
                     }
                 }
             }
+        }
+
+        public static IPAddress GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    return ip;
+                }
+            }
+            return null;
+        }
+
+        public static IPAddress GetDefaultGateway()
+        {
+            foreach (NetworkInterface i in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (i != null && i.OperationalStatus == OperationalStatus.Up)
+                {
+                    var address = i.GetIPProperties().GatewayAddresses[0];
+                    return address.Address;
+                }
+            }
+            return null;
         }
     }
 }
