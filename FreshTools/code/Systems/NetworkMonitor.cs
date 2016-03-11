@@ -14,9 +14,11 @@ namespace FreshTools
 
         }
 
-        public void TestPing()
+        public bool TestPing(string host)
         {
-
+            Ping ping = new Ping();
+            PingReply reply = ping.Send(host);
+            return (reply.Status == IPStatus.Success);
         }
 
         public bool TestWebPage(string url)
