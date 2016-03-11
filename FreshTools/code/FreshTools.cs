@@ -6,7 +6,7 @@ using System.Windows.Forms;
 
 namespace FreshTools
 {
-    public class MainForm : Form
+    public class FreshTools : ApplicationContext
     {
         //Notification Icon
         private Icon freshToolsIcon;
@@ -18,34 +18,49 @@ namespace FreshTools
         private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
         private VariablesFile settingsFile;
 
-        //Threads
-        private Thread pollingThread;
-        private bool sitePollingEnabled = true;
-
+        //Tools
         private IdleMonitor idleMonitor;
 
-        public MainForm()
+        public FreshTools()
         {
-            Thread.CurrentThread.Name = "FreshTools MainForm Thread";
+            Thread.CurrentThread.Name = "FreshTools Thread";
             LogSystem.Init();
             LoadConfig();
 
-            // Load icons from embeded resources
-            freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
+            Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
+            InitializeNotificationIcon();
+            freshToolsNotifyIcon.Visible = true;
 
+            RegisterHotkeys();
+
+            LogSystem.Log("FreshTools started sucsessfully");
+        }
+
+        /// <summary>
+        /// Create NotificationIcon loading embeded icon and defining menu items
+        /// </summary>
+        public void InitializeNotificationIcon()
+        {
             // Create notify icons and assign idle icon and show it
             freshToolsNotifyIcon = new NotifyIcon();
+            freshToolsNotifyIcon.Text = "Fresh Tools";
+
+            // Load icons from embeded resources
+            freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
             freshToolsNotifyIcon.Icon = freshToolsIcon;
-            freshToolsNotifyIcon.Visible = true;
 
             // Create all context menu items and add them to notification tray icon
             MenuItem titleMenuItem = new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version));
             MenuItem breakMenuItem = new MenuItem("-");
+
             startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
+
             MenuItem windowHotKeysEnabledManagerMenuItem = new MenuItem("Window Control Hot Keys");
             windowHotKeysEnabledManagerMenuItem.Checked = WindowManager.HotKeysEnabled;
+
             MenuItem quitMenuItem = new MenuItem("Quit");
+
             ContextMenu contextMenu = new ContextMenu();
             contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(breakMenuItem);
@@ -59,18 +74,6 @@ namespace FreshTools
             stopIdlePreventionMenuItem.Click += stopIdlePreventionMenuItem_Click;
             windowHotKeysEnabledManagerMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
-
-            //  Hide the form because we don't need it, this is a notification tray application
-            this.WindowState = FormWindowState.Minimized;
-            this.ShowInTaskbar = false;
-
-            RegisterHotkeys();
-
-            // Start worker thread that pulls HDD activity
-            pollingThread = new Thread(new ThreadStart(PollingThread));
-            pollingThread.Start();
-
-            LogSystem.Log("FreshTools started sucsessfully");
         }
 
         /// <summary>
@@ -79,7 +82,9 @@ namespace FreshTools
         [STAThread]
         static void Main(string[] args)
         {
-            Application.Run(new MainForm());
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Application.Run(new FreshTools());
         }
 
         public void LoadConfig()
@@ -148,12 +153,16 @@ namespace FreshTools
         private void quitMenuItem_Click(object sender, EventArgs e)
         {
             LogSystem.Log("quitMenuItem_Click()");
-            pollingThread.Abort();
             freshToolsNotifyIcon.Dispose();
             SaveVariables();
-            this.Close();
+            Application.Exit();
         }
         #endregion
+
+        private void OnApplicationExit(object sender, EventArgs args)
+        {
+            //cleanup
+        }
 
         #region HotKey Events
         private static void RegisterHotkeys()
@@ -170,42 +179,17 @@ namespace FreshTools
             {
                 if (args.Modifiers == (KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift) && args.Key == Keys.Oemtilde)
                 {
-                    LogSystem.Log("MainForm.HotKeyPressed() - Super Tilde - " + args.Modifiers + "+" + args.Key + "");
+                    LogSystem.Log("FreshTools.HotKeyPressed() - Super Tilde - " + args.Modifiers + "+" + args.Key + "");
                 }
                 else //unknown hot key pressed
                 {
                     //uncaught hotkey
-                    LogSystem.Log("MainForm.HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
+                    LogSystem.Log("FreshTools.HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
                 }
             }
             catch (Exception e)
             {
-                LogSystem.Log("Exception#" + LogSystem.IncrementExceptionCount() + " in MainForm.HotKeyPressed(object,HotKeyEventArgs) - " + e);
-            }
-        }
-        #endregion
-
-        #region Polling thread
-        /// <summary>
-        /// This is the thread that calls the site poller
-        /// </summary>
-        public void PollingThread()
-        {
-            try
-            {
-                // Main loop where all the magic happens
-                while (true)
-                {
-                    if (sitePollingEnabled)
-                    {
-
-                    }
-                    Thread.Sleep(100);
-                }
-            }
-            catch (ThreadAbortException)
-            {
-                // Thead was aborted
+                LogSystem.Log("Exception#" + LogSystem.IncrementExceptionCount() + " in FreshTools.HotKeyPressed(object,HotKeyEventArgs) - " + e);
             }
         }
         #endregion
