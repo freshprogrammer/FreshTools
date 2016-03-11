@@ -76,6 +76,7 @@
     <Compile Include="code\Scripting\VariablesFile.cs" />
     <Compile Include="code\Systems\HotKeyManager.cs" />
     <Compile Include="code\Systems\LogSystem.cs" />
+    <Compile Include="code\Systems\NetworkMonitor.cs" />
     <Compile Include="code\Systems\WindowManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -34,6 +34,9 @@ namespace FreshTools
             RegisterHotkeys();
 
             LogSystem.Log("FreshTools started sucsessfully");
+
+            NetworkMonitor netMan = new NetworkMonitor();
+            netMan.TestWriteToDB();
         }
 
         /// <summary>
