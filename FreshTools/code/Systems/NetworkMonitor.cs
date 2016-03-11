@@ -9,27 +9,33 @@ namespace FreshTools
 {
     class NetworkMonitor
     {
+        public static int PingTimeout = 1000;
+        public static int PageTimeout = 1000;
+
         public NetworkMonitor()
         {
 
         }
 
-        public bool TestPing(string url)
+        public static long TestPing(string url, int timeout=-1)
         {
             url = url.Trim();
             if (url.IndexOf("http://") != 0) url = "http://" + url;
 
+            if (timeout == -1)
+                timeout = PingTimeout;
+
             Ping ping = new Ping();
             Uri uri = new Uri(url);
-            PingReply reply = ping.Send(uri.DnsSafeHost);
-            LogSystem.Log("TestPing('" + url + "') - " + reply.Status);
-            return (reply.Status == IPStatus.Success);
+            PingReply reply = ping.Send(uri.DnsSafeHost, PingTimeout);
+            if (reply.Status == IPStatus.Success)
+                return reply.RoundtripTime;
+            else
+                return -1;
         }
 
-        public bool TestWebPage(string url)
+        public static bool TestWebPage(string url)
         {
-            TestPing(url);
-
             url = url.Trim();
             if (url.IndexOf("http://") != 0) url = "http://" + url;
 
@@ -38,7 +44,7 @@ namespace FreshTools
             {
                 HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
                 request.Method = WebRequestMethods.Http.Head;
-                request.Timeout = 2000;
+                request.Timeout = PageTimeout;
 
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
@@ -90,6 +96,21 @@ namespace FreshTools
                     }
                 }
             }
+        }
+
+        public static long PingInternet()
+        {
+            return TestPing("http://8.8.8.8");
+        }
+
+        public static bool IsTheInternetUp()
+        {
+            return 0 <= TestPing("http://8.8.8.8");
+        }
+
+        public static bool IsTheIntranetUp()
+        {
+            return 0 <= TestPing(GetDefaultGateway()+"",50);
         }
 
         public static IPAddress GetLocalIPAddress()

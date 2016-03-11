@@ -38,12 +38,26 @@ namespace FreshTools
 
             NetworkMonitor netMan = new NetworkMonitor();
             //netMan.TestWriteToDB();
-            netMan.TestWebPage(NetworkMonitor.GetLocalIPAddress() + "");
-            //netMan.TestWebPage(NetworkMonitor.GetDefaultGateway()+"");
-            netMan.TestWebPage("http://www.checkupdown.com/accounts/grpb/B1394343/");
-            netMan.TestWebPage("www.gooogle.com");
-            netMan.TestWebPage("8.8.8.8");
-            netMan.TestWebPage("209.164.2.138");
+            LogSystem.Log("NetworkMonitor.IsTheIntranetUp() - " + NetworkMonitor.IsTheIntranetUp());
+            LogSystem.Log("NetworkMonitor.IsTheInternetUp() - " + NetworkMonitor.IsTheInternetUp());
+
+            NetworkMonitor.TestPing("1.2.3.4");
+            NetworkMonitor.TestPing(NetworkMonitor.GetLocalIPAddress() + "");
+            NetworkMonitor.TestPing(NetworkMonitor.GetDefaultGateway() + "");
+            NetworkMonitor.TestPing("http://www.checkupdown.com/accounts/grpb/B1394343/");
+            NetworkMonitor.TestPing("www.gooogle.com");
+            NetworkMonitor.TestPing("8.8.8.8");
+            NetworkMonitor.TestPing("209.164.2.138");
+            NetworkMonitor.TestPing("freshprogramming.com");
+
+            NetworkMonitor.TestWebPage("1.2.3.4");
+            NetworkMonitor.TestWebPage(NetworkMonitor.GetLocalIPAddress() + "");
+            NetworkMonitor.TestWebPage(NetworkMonitor.GetDefaultGateway() + "");
+            NetworkMonitor.TestWebPage("http://www.checkupdown.com/accounts/grpb/B1394343/");
+            NetworkMonitor.TestWebPage("www.gooogle.com");
+            NetworkMonitor.TestWebPage("8.8.8.8");
+            NetworkMonitor.TestWebPage("209.164.2.138");
+            NetworkMonitor.TestWebPage("freshprogramming.com");
         }
 
         /// <summary>
