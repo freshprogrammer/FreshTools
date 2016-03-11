@@ -36,7 +36,11 @@ namespace FreshTools
             LogSystem.Log("FreshTools started sucsessfully");
 
             NetworkMonitor netMan = new NetworkMonitor();
-            netMan.TestWriteToDB();
+            //netMan.TestWriteToDB();
+            netMan.TestWebPage("www.gooogle.com");
+            netMan.TestWebPage("http://www.checkupdown.com/accounts/grpb/B1394343/");
+            netMan.TestWebPage("8.8.8.8");
+            netMan.TestWebPage("209.164.2.138");
         }
 
         /// <summary>

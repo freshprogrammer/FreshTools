@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SqlClient;
+using System.Net;
 using System.Windows.Forms;
 
 namespace FreshTools
@@ -16,9 +17,27 @@ namespace FreshTools
 
         }
 
-        public void TestPage()
+        public bool TestWebPage(string url)
         {
+            url = url.Trim();
+            if (url.IndexOf("http://") != 0) url = "http://" + url;
 
+            bool pageExists = false;
+            try
+            {
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
+                request.Method = WebRequestMethods.Http.Head;
+                request.Timeout = 2000;
+                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+                pageExists = response.StatusCode == HttpStatusCode.OK;
+                LogSystem.Log("TestWebPage('" + url + "') - " + response.StatusCode);
+            }
+            catch (WebException e)
+            {
+                LogSystem.Log("TestWebPage('" + url + "') - WebException-" + e.Message);
+            }
+
+            return pageExists;
         }
 
         public void TestWriteToDB()
