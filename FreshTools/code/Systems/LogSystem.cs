@@ -1,24 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection;
 
 namespace FreshTools
 {
-    static class LogSystem
+    public static class LogSystem
     {
         //file
         private static object logFileLock = new Object();
         private static string logFileName = @"log.txt";
         private static int logFileCount = 9;//This can only handle up to single digits
-        private static int logHistoryCount = 50;
+        private static int logHistoryCount = 50;//number of records to hold in memory
 
-        public static string TimeStampFormat = "MM/dd/yyyy hh:mm:ss:ffff tt :: ";
+        public static string TimeStampFormat = "MM/dd/yyyy hh:mm:ss:ffff tt";
         public static bool IncludeTimeStampInConsole = false;
 
         //data
         private static int exceptionCount = 0;
-        private static List<string> logRecords = new List<string>(logHistoryCount);
+        private static List<LogRecord> logRecords = new List<LogRecord>(logHistoryCount);
 
 
         /// <summary>
@@ -57,21 +58,27 @@ namespace FreshTools
             Log(Assembly.GetExecutingAssembly().GetName().Name + " (v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version) + ")");
         }
 
-        public static void Log(string log)
+        public static void Log(string log, LogLevel logLevel=LogLevel.Information, string tag=null)
         {
-            string timeStamp = DateTime.Now.ToString(TimeStampFormat);
-            string timeStampedLog = timeStamp + log;
-            AppendLog(timeStampedLog);
+            MethodBase mb = new StackTrace().GetFrame(1).GetMethod();
+            string methodName = mb.DeclaringType + "." + mb.Name;
+
+            LogRecord rec = new LogRecord(log, methodName, logLevel, tag);
+            AppendLog(rec);
+
+            string timeStamp = rec.Time.ToString(TimeStampFormat);
+            string consoleOutput = rec.Method + "-" + rec.Message;
+            string logFileOutput = timeStamp + "::" + rec.Method + "-" + rec.Message;
 
             if (IncludeTimeStampInConsole)
-                log = timeStamp + log;
-            Console.WriteLine(log);
+                consoleOutput = timeStamp + consoleOutput;
+            Console.WriteLine(consoleOutput);
 
             lock (logFileLock)
             {
                 using (StreamWriter sw = (File.Exists(logFileName)) ? File.AppendText(logFileName) : File.CreateText(logFileName))
                 {
-                    sw.WriteLine(timeStampedLog);
+                    sw.WriteLine(logFileOutput);
                     sw.Flush();
                     sw.Close();
                 }
@@ -98,7 +105,7 @@ namespace FreshTools
             string result = "";
             if (count == -1)//include all
             {
-                foreach (string l in logRecords)
+                foreach (LogRecord l in logRecords)
                 {
                     result += l + "\n";
                 }
@@ -114,7 +121,7 @@ namespace FreshTools
             return result.TrimEnd();
         }
 
-        private static void AppendLog(string log)
+        private static void AppendLog(LogRecord log)
         {
             //not a great implementation but it works. Total waste of ReShuffleing RAM when full and removing
             if (logRecords.Count == logRecords.Capacity)
@@ -132,5 +139,42 @@ namespace FreshTools
                 File.Move(src, dest);
             }
         }
+    }
+
+    public struct LogRecord
+    {
+        public string Message;
+        public string Method;
+        public LogLevel Level;
+        public string Tag;
+        public DateTime Time;
+
+        public LogRecord(string message, string method, LogLevel level=LogLevel.Information, string tag=null, DateTime time=default(DateTime))
+        {
+            if (time == default(DateTime))
+                time = DateTime.Now;
+            if (tag == null)
+                tag = "";
+
+            Message = message;
+            Method = method;
+            Level = level;
+            Tag = tag;
+            Time = time;
+        }
+
+        public override string ToString()
+        {
+            return "LogRecord("+Time+" "+ Method + "-" + Message + ")";
+        }
+    }
+
+    public enum LogLevel
+    {
+        Verbose=5,
+        Information=4,
+        Warning=3,
+        Error=2,
+        FatalError=1
     }
 }

@@ -89,6 +89,7 @@ namespace FreshTools
 
         public void LoadConfig()
         {
+            LogSystem.Log("Loading Config");
             settingsFile = new VariablesFile(configFilePath, null, false);
             VariableLibrary vars = settingsFile.variables;
             
@@ -97,6 +98,7 @@ namespace FreshTools
             WindowManager.HotKeysEnabled = vars.GetVariable("EnableWindowManager", ref windowHotKeys, true).Boolean;
 
             //vars.GetVariable("testVariable", ref testVariable, true);
+            LogSystem.Log("Finisihed loading config");
         }
 
         /// <summary>
