@@ -23,7 +23,7 @@ namespace FreshTools
         //data
         private static int logCount = 0;
         private static int exceptionCount = 0;
-        private static List<LogRecord> logRecords = new List<LogRecord>(logHistoryCount);
+        private static FixedSizeArray<LogRecord> logRecords = new FixedSizeArray<LogRecord>(logHistoryCount);
 
 
         /// <summary>
@@ -131,7 +131,7 @@ namespace FreshTools
             logCount++;
             //not a great implementation but it works. Total waste of ReShuffleing RAM when full and removing
             if (logRecords.Count == logRecords.Capacity)
-                logRecords.RemoveAt(0);
+                logRecords.Remove(0);
             logRecords.Add(log);
         }
 
