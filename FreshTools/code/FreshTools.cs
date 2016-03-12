@@ -37,27 +37,7 @@ namespace FreshTools
             LogSystem.Log("FreshTools started sucsessfully");
 
             NetworkMonitor netMan = new NetworkMonitor();
-            //netMan.TestWriteToDB();
-            LogSystem.Log("NetworkMonitor.IsTheIntranetUp() - " + NetworkMonitor.IsTheGatewayUp());
-            LogSystem.Log("NetworkMonitor.IsTheInternetUp() - " + NetworkMonitor.IsTheInternetUp());
-
-            NetworkMonitor.Ping("1.2.3.4");
-            NetworkMonitor.Ping(NetworkMonitor.GetLocalIPAddress() + "");
-            NetworkMonitor.Ping(NetworkMonitor.GetDefaultGateway() + "");
-            NetworkMonitor.Ping("http://www.checkupdown.com/accounts/grpb/B1394343/");
-            NetworkMonitor.Ping("www.gooogle.com");
-            NetworkMonitor.Ping("8.8.8.8");
-            NetworkMonitor.Ping("209.164.2.138");
-            NetworkMonitor.Ping("freshprogramming.com");
-
-            NetworkMonitor.TestWebPage("1.2.3.4");
-            NetworkMonitor.TestWebPage(NetworkMonitor.GetLocalIPAddress() + "");
-            NetworkMonitor.TestWebPage(NetworkMonitor.GetDefaultGateway() + "");
-            NetworkMonitor.TestWebPage("http://www.checkupdown.com/accounts/grpb/B1394343/");
-            NetworkMonitor.TestWebPage("www.gooogle.com");
-            NetworkMonitor.TestWebPage("8.8.8.8");
-            NetworkMonitor.TestWebPage("209.164.2.138");
-            NetworkMonitor.TestWebPage("freshprogramming.com");
+            NetworkMonitor.TestCode();
         }
 
         /// <summary>
