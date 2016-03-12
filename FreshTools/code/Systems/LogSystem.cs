@@ -112,7 +112,7 @@ namespace FreshTools
             {
                 foreach (LogRecord l in logRecords)
                 {
-                    result += l + "\n";
+                    result += l.Method + "-" + l.Message + "\n";
                 }
             }
             else
@@ -120,7 +120,7 @@ namespace FreshTools
                 if (count > logRecords.Count) count = logRecords.Count;
                 for (int x = logRecords.Count - count; x < logRecords.Count; x++)
                 {
-                    result += logRecords[x] + "\n";
+                    result += logRecords[x].Method + "-" + logRecords[x].Message + "\n";
                 }
             }
             return result.TrimEnd();
