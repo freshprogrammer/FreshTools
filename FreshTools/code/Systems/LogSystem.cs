@@ -14,8 +14,10 @@ namespace FreshTools
         private static int logFileCount = 9;//This can only handle up to single digits
         private static int logHistoryCount = 50;//number of records to hold in memory
 
-        public static string TimeStampFormat = "MM/dd/yyyy hh:mm:ss:ffff tt";
+        public static string TimeStampFormat = "MM/dd/yyyy HH:mm:ss:ffff";
         public static bool IncludeTimeStampInConsole = false;
+        public static LogLevel ConsoleLogLevel = LogLevel.Information;
+        public static LogLevel LogFileLogLevel = LogLevel.Verbose;
 
         //data
         private static int exceptionCount = 0;
@@ -70,17 +72,23 @@ namespace FreshTools
             string consoleOutput = rec.Method + "-" + rec.Message;
             string logFileOutput = timeStamp + "::" + rec.Method + "-" + rec.Message;
 
-            if (IncludeTimeStampInConsole)
-                consoleOutput = timeStamp + consoleOutput;
-            Console.WriteLine(consoleOutput);
-
-            lock (logFileLock)
+            if (rec.LogLevel <= ConsoleLogLevel)
             {
-                using (StreamWriter sw = (File.Exists(logFileName)) ? File.AppendText(logFileName) : File.CreateText(logFileName))
+                if (IncludeTimeStampInConsole)
+                    consoleOutput = timeStamp + consoleOutput;
+                Console.WriteLine(consoleOutput);
+            }
+
+            if (rec.LogLevel <= LogFileLogLevel)
+            {
+                lock (logFileLock)
                 {
-                    sw.WriteLine(logFileOutput);
-                    sw.Flush();
-                    sw.Close();
+                    using (StreamWriter sw = (File.Exists(logFileName)) ? File.AppendText(logFileName) : File.CreateText(logFileName))
+                    {
+                        sw.WriteLine(logFileOutput);
+                        sw.Flush();
+                        sw.Close();
+                    }
                 }
             }
         }
@@ -145,7 +153,7 @@ namespace FreshTools
     {
         public string Message;
         public string Method;
-        public LogLevel Level;
+        public LogLevel LogLevel;
         public string Tag;
         public DateTime Time;
 
@@ -158,7 +166,7 @@ namespace FreshTools
 
             Message = message;
             Method = method;
-            Level = level;
+            LogLevel = level;
             Tag = tag;
             Time = time;
         }
