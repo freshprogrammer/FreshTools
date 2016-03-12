@@ -7,6 +7,7 @@ namespace FreshTools
 {
     public class FixedSizeArray<T> : IEnumerable
     {
+        //private internal variables
         private const int LINEAR_SEARCH_CUTOFF = 16;
         private readonly T[] mContents;
         private int mCount;
@@ -14,11 +15,18 @@ namespace FreshTools
         private bool mSorted;
         private Sorter<T> mSorter;
 
+        //public variables
         public int Count { get { return mCount; } }
         public int Capacity { get { return mContents.Length; } }
         public bool IsFull { get { return mCount >= mContents.Length; } }
         public bool IsEmpty { get { return mCount == 0; } }
 
+        /// <summary>
+        /// Expose direect access to elements in array. use with caution
+        /// as making changes this way can leave the array in an unknkown state
+        /// </summary>
+        /// <param name="index">Index in array to return</param>
+        /// <returns>Object at given index in array</returns>
         public T this[int index]
         {
             get
@@ -27,6 +35,10 @@ namespace FreshTools
             }
         }
 
+        /// <summary>
+        /// Create an array of Type T at a fixed length
+        /// </summary>
+        /// <param name="size">Size of array to be created</param>
         public FixedSizeArray(int size)
         {
             Debug.Assert(size > 0, "Array Size cant be 0");
@@ -38,6 +50,11 @@ namespace FreshTools
             mSorter = new StandardSorter<T>();
         }
 
+        /// <summary>
+        /// Create an array of Type T at a fixed length
+        /// </summary>
+        /// <param name="size">Size of array to be created</param>
+        /// <param name="comparator">IComparer for adding/finding/sorting items</param>
         public FixedSizeArray(int size, IComparer<T> comparator)
         {
             Debug.Assert(size > 0, "Array Size cant be 0");
@@ -50,7 +67,7 @@ namespace FreshTools
         }
 
         /// <summary>
-        /// Returns a new array with given size. if size is smaller old items are trashed
+        /// Returns a new array with given size. If size is smaller old items are trashed
         /// </summary>
         public FixedSizeArray<T> ChangeSize(int deltaSize)
         {
@@ -71,12 +88,15 @@ namespace FreshTools
             return result;
         }
 
-        public static FixedSizeArray<T> Merge(FixedSizeArray<T> list1, FixedSizeArray<T> list2)
-        {
-            return Merge(list1, list2, false, null);
-        }
-
-        public static FixedSizeArray<T> Merge(FixedSizeArray<T> list1, FixedSizeArray<T> list2, bool listsSorted, IComparer<T> comparer)
+        /// <summary>
+        /// Creates a new FixedSizeArray with the given elements sorted if possible
+        /// </summary>
+        /// <param name="list1">List of elements to be added</param>
+        /// <param name="list2">List of elements to be added</param>
+        /// <param name="listsSorted">Are these lists pre sorted</param>
+        /// <param name="comparer">Comparer to sort the list now nd in the future</param>
+        /// <returns>Returns a new array withe the given elements</returns>
+        public static FixedSizeArray<T> Merge(FixedSizeArray<T> list1, FixedSizeArray<T> list2, bool listsSorted=false, IComparer<T> comparer=null)
         {
             int newCount = list1.GetCount() + list2.GetCount();
             FixedSizeArray<T> result = new FixedSizeArray<T>(newCount, comparer);
@@ -146,13 +166,12 @@ namespace FreshTools
             return result;
         }
 
-        /** 
-         * Inserts a new object into the array.  If the array is full, an assert is thrown and the
-         * object is ignored.
-         * 
-         * cant be extended by children
-         */
-        public void Add(T objct)
+        /// <summary>
+        /// Inserts a new object into the array. If the array is full, an assert is thrown and the
+        /// object is ignored.
+        /// </summary>
+        /// <param name="objct">Object to be added</param>
+        public sealed void Add(T objct)
         {
             Debug.Assert(mCount < mContents.Length, "Array exhausted! (" + mCount + ")");
             if (mCount < mContents.Length)
@@ -163,12 +182,13 @@ namespace FreshTools
             }
         }
 
-        /** 
-         * Inserts a new object into the array.  If the object is alresdy in the array it is not added
-         * 
-         * cant be extended by children
-         */
-        public void AddDistinct(T objct, bool ignoreComparator)
+        /// <summary>
+        /// Inserts a new object into the array.  If the object is already in the array it is not added
+        /// If the array is full, an assert is thrown and the object is ignored.
+        /// </summary>
+        /// <param name="objct">Object to try and add</param>
+        /// <param name="ignoreComparator">Should the lookup ignore the comparator</param>
+        public sealed void AddDistinct(T objct, bool ignoreComparator)
         {
             if (Find(objct, ignoreComparator) == -1)
             {
@@ -177,39 +197,42 @@ namespace FreshTools
             }
         }
 
-        /** 
-         * Inserts an array of new objects into the array.  If the array is full, an assert is thrown and the
-         * object is ignored.
-         * 
-         * cant be extended by children
-         */
-        public void AddArray(FixedSizeArray<T> ary)
+        /// <summary>
+        /// Inserts an array of new objects into the array.  If the array is full, an assert is thrown and the
+        /// remaining objects are ignored.
+        /// </summary>
+        /// <param name="array">Array to add</param>
+        public sealed void AddArray(FixedSizeArray<T> array)
         {
-            foreach (T t in ary)
+            foreach (T t in array)
             {
                 Add(t);
             }
         }
 
-        /** 
-         * Inserts a new object into the array.  If the object is alresdy in the array it is not added
-         * 
-         * cant be extended by children
-         */
-        public void AddDistinctArray(FixedSizeArray<T> ary, bool ignoreComparator)
+        /// <summary>
+        /// Inserts an array of new objects into the array.  If the array is full, an assert is thrown and the
+        /// remaining objects are ignored.
+        /// </summary>
+        /// <param name="array">Array to add</param>
+        /// <param name="ignoreComparator">Should this add ignore comparitor</param>
+        public sealed void AddDistinctArray(FixedSizeArray<T> array, bool ignoreComparator)
         {
-            foreach (T t in ary)
+            foreach (T t in array)
             {
                 AddDistinct(t, ignoreComparator);
             }
         }
-
-        /** 
-         * Searches for an object and removes it from the array if it is found.  Other indexes in the
-         * array are shifted up to fill the space left by the removed object.  Note that if
-         * ignoreComparator is set to true, a linear search of object references will be performed.
-         * Otherwise, the comparator set on this array (if any) will be used to find the object.
-         */
+        
+        /// <summary>
+        /// Searches for an object and removes it from the array if it is found.  Other indexes in the
+        /// array are shifted up to fill the space left by the removed object.  Note that if
+        /// ignoreComparator is set to true, a linear search of object references will be performed.
+        /// Otherwise, the comparator set on this array (if any) will be used to find the object.
+        /// </summary>
+        /// <param name="objct">Object to locate and remove</param>
+        /// <param name="ignoreComparator">Use Comparator?</param>
+        /// <returns>Object that was removed</returns>
         public T Remove(T objct, bool ignoreComparator)
         {
             T result = default(T);
@@ -221,14 +244,15 @@ namespace FreshTools
             return result;
         }
 
-        /** 
-         * Removes the specified index from the array.  Subsequent entries in the array are shifted up
-         * to fill the space.
-         */
+        /// <summary>
+        /// Searches for an object and removes it from the array if it is found.  Other indexes in the
+        /// array are shifted up to fill the space left by the removed object.
+        /// </summary>
+        /// <param name="objct">Object to locate and remove</param>
+        /// <returns>Object that was removed</returns>
         public T Remove(int index)
         {
             Debug.Assert(index < mCount, "Element index out of range");
-            // ugh
             T result = default(T);
             if (index < mCount)
             {
@@ -249,11 +273,11 @@ namespace FreshTools
             return result;
         }
 
-        /**
-         * Removes the last element in the array and returns it.  This method is faster than calling
-         * remove(count -1);
-         * @return The contents of the last element in the array.
-         */
+        /// <summary>
+        /// Removes the last element in the array and returns it.  This method is faster than calling
+        /// remove(count -1);
+        /// </summary>
+        /// <returns>The contents of the last element in the array</returns>
         public T RemoveLast()
         {
             T result = default(T);
@@ -266,15 +290,20 @@ namespace FreshTools
             return result;
         }
 
-        /**
-         * Swaps the element at the passed index with the element at the end of the array.  When
-         * followed by removeLast(), this is useful for quickly removing array elements.
-         */
+        /// <summary>
+        /// Oject at given index is moved to last in the array
+        /// </summary>
+        /// <param name="index">Index to swap with last</param>
         public void SwapWithLast(int index)
         {
             Swap(index, mCount - 1);
         }
 
+        /// <summary>
+        /// Swaps two objcts in the array. If one or both of the indexes are out of range nothing is swpped
+        /// </summary>
+        /// <param name="index1"></param>
+        /// <param name="index2"></param>
         public void Swap(int index1, int index2)
         {
             if (mCount > 0 && index1 < mCount && index2 < mCount && index1 != index2)
@@ -286,10 +315,12 @@ namespace FreshTools
             }
         }
 
-        /**
-         * Sets the value of a specific index in the array.  An object must have already been added to
-         * the array at that index for this command to complete.
-         */
+        /// <summary>
+        /// Sets the value of a specific index in the array.  An object must have already been added to
+        /// the array at that index for this command to complete.
+        /// </summary>
+        /// <param name="index">Index to place the object at</param>
+        /// <param name="objct">Object to be inserted</param>
         public void Set(int index, T objct)
         {
             Debug.Assert(index < mCount, "Element index out of range");
@@ -299,10 +330,10 @@ namespace FreshTools
             }
         }
 
-        /**
-         * Clears the contents of the array, releasing all references to objects it contains and 
-         * setting its count to zero.
-         */
+        /// <summary>
+        /// Clears the contents of the array, releasing all references to objects it contains and 
+        /// setting its count to zero.
+        /// </summary>
         public void Clear()
         {
             for (int x = 0; x < mCount; x++)
@@ -313,9 +344,11 @@ namespace FreshTools
             mSorted = false;
         }
 
-        /**
-         * Returns an entry from the array at the specified index.
-         */
+        /// <summary>
+        /// Returns an entry from the array at the specified index. Will throw exception if out of range
+        /// </summary>
+        /// <param name="index">Index to return</param>
+        /// <returns>Item at given index</returns>
         public T Get(int index)
         {
             Debug.Assert(index < mCount, "Element index out of range");
@@ -327,9 +360,11 @@ namespace FreshTools
             return result;
         }
 
-        /**
-         * Returns an entry from the array at the specified index.
-         */
+        /// <summary>
+        /// Returns an entry from the array at the specified index
+        /// </summary>
+        /// <param name="index">Index to return</param>
+        /// <returns>Item at given index. default if nothing is found</returns>
         public T GetSafe(int index)
         {
             if (index >= mCount)
@@ -337,36 +372,40 @@ namespace FreshTools
             return Get(index);
         }
 
+        /// <summary>
+        /// Returns a random element in the array
+        /// </summary>
+        /// <returns>random element in the array</returns>
         public T GetRandom()
         {
             return Get(FreshMath.Random.Next(0, mCount));
         }
-
-        /** 
-         * Returns the raw internal array.  Exposed here so that tight loops can cache this array
-         * and walk it without the overhead of repeated function calls.  Beware that changing this array
-         * can leave FixedSizeArray in an undefined state, so this function is potentially dangerous
-         * and should be used in read-only cases.
-         * @return The internal storage array.
-         */
+        
+        /// <summary>
+        /// Returns the raw internal array.  Exposed here so that tight loops can cache this array
+        /// and walk it without the overhead of repeated function calls.  Beware that changing this array
+        /// can leave FixedSizeArray in an undefined state, so this function is potentially dangerous
+        /// and should be used in read-only cases.
+        /// </summary>
+        /// <returns>he internal storage array</returns>
         public T[] GetArray()
         {
             return mContents;
         }
 
-
-        /**
-         * Searches the array for the specified object.  If the array has been sorted with sort(),
-         * and if no other order-changing events have occurred since the sort (e.g. add()), a
-         * binary search will be performed.  If a comparator has been specified with setComparator(),
-         * it will be used to perform the search.  If not, the default comparator for the object type
-         * will be used.  If the array is unsorted, a linear search is performed.
-         * Note that if ignoreComparator is set to true, a linear search of object references will be 
-         * performed. Otherwise, the comparator set on this array (if any) will be used to find the
-         * object.
-         * @param object  The object to search for.
-         * @return  The index of the object in the array, or -1 if the object is not found.
-         */
+        /// <summary>
+        /// Searches the array for the specified object.  If the array has been sorted with sort(),
+        /// and if no other order-changing events have occurred since the sort (e.g. add()), a
+        /// binary search will be performed.  If a comparator has been specified with setComparator(),
+        /// it will be used to perform the search.  If not, the default comparator for the object type
+        /// will be used.  If the array is unsorted, a linear search is performed.
+        /// Note that if ignoreComparator is set to true, a linear search of object references will be 
+        /// performed. Otherwise, the comparator set on this array (if any) will be used to find the
+        /// object.
+        /// </summary>
+        /// <param name="objct">The object to search for</param>
+        /// <param name="ignoreComparator">Use comparator?</param>
+        /// <returns>The index of the object in the array, or -1 if the object is not found.</returns>
         public int Find(T objct, bool ignoreComparator)
         {
             int index = -1;
@@ -436,14 +475,14 @@ namespace FreshTools
             return index;
         }
 
-        /**
-         * Sorts the array.  If the array is already sorted, no work will be performed unless
-         * the forceResort parameter is set to true.  If a comparator has been specified with
-         * setComparator(), it will be used for the sort; otherwise the object's natural ordering will
-         * be used.
-         * @param forceResort  If set to true, the array will be resorted even if the order of the
-         * objects in the array has not changed since the last sort.
-         */
+        /// <summary>
+        /// Sorts the array.  If the array is already sorted, no work will be performed unless
+        /// the forceResort parameter is set to true.  If a comparator has been specified with
+        /// setComparator(), it will be used for the sort; otherwise the object's natural ordering will
+        /// be used.
+        /// </summary>
+        /// <param name="forceResort">If set to true, the array will be resorted even if the order of the
+        /// objects in the array has not changed since the last sort.</param>
         public void Sort(bool forceResort)
         {
             if (!mSorted || forceResort)
@@ -462,19 +501,28 @@ namespace FreshTools
             }
         }
 
-        /** Returns the number of objects in the array. */
+        /// <summary>
+        /// Returns the number of objects in the array.
+        /// </summary>
+        /// <returns>Count of elements in the array</returns>
         public int GetCount()
         {
             return mCount;
         }
 
-        /** Returns the maximum number of objects that can be inserted inot this array. */
+        /// <summary>
+        /// Returns the maximum number of objects that can be inserted inot this array.
+        /// </summary>
+        /// <returns>Max suze if array</returns>
         public int GetCapacity()
         {
             return mContents.Length;
         }
 
-        /** Sets a comparator to use for sorting and searching. */
+        /// <summary>
+        /// Sets a comparator to use for sorting and searching.
+        /// </summary>
+        /// <param name="comparator">Comparator to use</param>
         public void SetComparator(IComparer<T> comparator)
         {
             mComparator = comparator;
@@ -501,13 +549,13 @@ namespace FreshTools
             return "FixedSizeArray<" + typeof(T).Name + ">(" + Count + " of " + Capacity + ")";
         }
     }
+
     public class ArrayEnum<T> : IEnumerator
     {
         public T[] mContents;
         private int count;
 
-        // Enumerators are positioned before the first element
-        // until the first MoveNext() call.
+        // Enumerators are positioned before the first element until the first MoveNext() call.
         int position = -1;
 
         public ArrayEnum(T[] list, int count)
@@ -550,10 +598,12 @@ namespace FreshTools
             }
         }
     }
+
     public abstract class Sorter<T>
     {
         public abstract void Sort(T[] array, int count, IComparer<T> comparator);
     }
+
     public class StandardSorter<T> : Sorter<T>
     {
 
@@ -564,6 +614,7 @@ namespace FreshTools
         }
 
     }
+
     public class ShellSorter<T> : Sorter<T>
     {
         /** 
@@ -573,7 +624,6 @@ namespace FreshTools
          * to pass over the array each time.  Currently this function uses Robert Cruse's suggestion
          * of increment = increment / 3 + 1.
          */
-
         public override void Sort(T[] array, int count, IComparer<T> comparator)
         {
             int increment = count / 3 + 1;
@@ -594,17 +644,19 @@ namespace FreshTools
             InsertionSort(array, count, 0, 1, comparator);
         }
 
-
-        /**
-          *  Insertion sort modified to sort elements at a
-          *  fixed increment apart.
-          *
-          *  The code can be revised to eliminate the initial
-          *  'if', but I found that it made the sort slower.
-          *
-          *  @param start      the start position 
-          *  @param increment  the increment
-          */
+        
+        /// <summary>
+        /// Insertion sort modified to sort elements at a
+        /// fixed increment apart.
+        ///
+        /// The code can be revised to eliminate the initial
+        /// 'if', but I found that it made the sort slower.
+        /// </summary>
+        /// <param name="array">array to sort</param>
+        /// <param name="count">end index of sort</param>
+        /// <param name="start">start pos</param>
+        /// <param name="increment">increment</param>
+        /// <param name="comparator"></param>
         public void InsertionSort(T[] array, int count, int start, int increment,
                 IComparer<T> comparator)
         {
