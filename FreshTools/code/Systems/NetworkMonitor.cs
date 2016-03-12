@@ -31,14 +31,14 @@ namespace FreshTools
             LogSystem.Log("NetworkMonitor.IsTheIntranetUp() - " + NetworkMonitor.IsTheGatewayUp());
             LogSystem.Log("NetworkMonitor.IsTheInternetUp() - " + NetworkMonitor.IsTheInternetUp());
 
-            /*Ping("1.2.3.4");
+            Ping("1.2.3.4");
             Ping(NetworkMonitor.GetLocalIPAddress() + "");
             Ping(NetworkMonitor.GetDefaultGateway() + "");
             Ping("http://www.checkupdown.com/accounts/grpb/B1394343/");
             Ping("www.gooogle.com");
             Ping("8.8.8.8");
             Ping("209.164.2.138");
-            Ping("freshprogramming.com");*/
+            Ping("freshprogramming.com");
 
             PingAsync("1.2.3.4");
             PingAsync(NetworkMonitor.GetLocalIPAddress() + "");
@@ -48,36 +48,62 @@ namespace FreshTools
             PingAsync("8.8.8.8");
             PingAsync("209.164.2.138");
             PingAsync("freshprogramming.com");
+            PingAsync("freshDistraction.com");
+            PingAsync("freshGifs.com");
 
-            /*TestWebPage("1.2.3.4");
+            TestWebPage("1.2.3.4");
             TestWebPage(NetworkMonitor.GetLocalIPAddress() + "");
             TestWebPage(NetworkMonitor.GetDefaultGateway() + "");
             TestWebPage("http://www.checkupdown.com/accounts/grpb/B1394343/");
             TestWebPage("www.gooogle.com");
             TestWebPage("8.8.8.8");
             TestWebPage("209.164.2.138");
-            TestWebPage("freshprogramming.com");*/
+            TestWebPage("freshprogramming.com");
         }
 
         private static void PingCompleted(object o, PingCompletedEventArgs args)
         {
-            LogSystem.Log("PingCompleted('" + args.Reply.Address + "') - " + args.Reply.Status + " - " + args.Reply.RoundtripTime);
+            if (args.Error != null)
+                LogSystem.Log("PingCompleted() - Error - " + args.Error.Message);//no idea what site failed
+            else
+                LogSystem.Log("PingCompleted() - '" + args.Reply.Address + "' - " + args.Reply.Status + " - " + args.Reply.RoundtripTime);
         }
 
         public static PingReply Ping(string url, int timeout = -1)
         {
+            LogSystem.Log("Ping('" + url + "')");
+
             url = FormatURL(url);
+            if (url == null || url.Length==0)
+            {
+                LogSystem.Log("Ping('" + url + "') - Failed - invalid url");
+                return null;
+            }
 
             if (timeout == -1)
                 timeout = PingTimeout;
 
             Uri uri = new Uri(url);
-            return new Ping().Send(uri.DnsSafeHost, PingTimeout);
+            try
+            {
+                return new Ping().Send(uri.DnsSafeHost, PingTimeout);
+            }
+            catch (PingException e)
+            {
+                return null;
+            }
         }
 
         private static void PingAsync(string url, int timeout = -1)
         {
+            LogSystem.Log("PingAsync('" + url + "')");
+
             url = FormatURL(url);
+            if (url == null || url.Length == 0)
+            {
+                LogSystem.Log("PingAsync('" + url + "') - Failed - invalid url");
+                return;
+            }
 
             if (timeout == -1)
                 timeout = PingTimeout;
@@ -92,6 +118,11 @@ namespace FreshTools
         public static bool TestWebPage(string url)
         {
             url = FormatURL(url);
+            if (url == null || url.Length == 0)
+            {
+                LogSystem.Log("TestWebPage('" + url + "') - Failed - invalid url");
+                return false;
+            }
 
             bool pageExists = false;
             try
@@ -164,12 +195,17 @@ namespace FreshTools
 
         public static bool IsTheGatewayUp()
         {
-            return 0 <= Ping(GetDefaultGateway() + "", PingShortTimeout).RoundtripTime;
+            IPAddress gateway = GetDefaultGateway();
+            if (gateway == null)
+                return false;
+            return 0 <= Ping(gateway + "", PingShortTimeout).RoundtripTime;
         }
 
         public static string FormatURL(string url)
         {
             url = url.Trim();
+            if (url.Length == 0)
+                return null;
             if (url.IndexOf("http://") != 0)
                 url = "http://" + url;
             return url;
@@ -192,9 +228,9 @@ namespace FreshTools
         {
             foreach (NetworkInterface i in NetworkInterface.GetAllNetworkInterfaces())
             {
-                if (i != null && i.OperationalStatus == OperationalStatus.Up)
+                if (i != null && i.OperationalStatus == OperationalStatus.Up && i.GetIPProperties().GatewayAddresses.Count > 0)
                 {
-                    var address = i.GetIPProperties().GatewayAddresses[0];
+                    GatewayIPAddressInformation address = i.GetIPProperties().GatewayAddresses[0];
                     return address.Address;
                 }
             }
