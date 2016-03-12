@@ -9,35 +9,31 @@ namespace FreshTools
 {
     class NetworkMonitor
     {
+        public static string InternetURL = "http://8.8.8.8";
         public static int PingTimeout = 1000;
         public static int PageTimeout = 1000;
+        public static int PingShortTimeout = 50;
 
         public NetworkMonitor()
         {
 
         }
 
-        public static long TestPing(string url, int timeout=-1)
+        public static PingReply Ping(string url, int timeout = -1)
         {
-            url = url.Trim();
-            if (url.IndexOf("http://") != 0) url = "http://" + url;
+            url = FormatURL(url);
 
             if (timeout == -1)
                 timeout = PingTimeout;
 
             Ping ping = new Ping();
             Uri uri = new Uri(url);
-            PingReply reply = ping.Send(uri.DnsSafeHost, PingTimeout);
-            if (reply.Status == IPStatus.Success)
-                return reply.RoundtripTime;
-            else
-                return -1;
+            return new Ping().Send(uri.DnsSafeHost, PingTimeout);
         }
 
         public static bool TestWebPage(string url)
         {
-            url = url.Trim();
-            if (url.IndexOf("http://") != 0) url = "http://" + url;
+            url = FormatURL(url);
 
             bool pageExists = false;
             try
@@ -98,19 +94,27 @@ namespace FreshTools
             }
         }
 
-        public static long PingInternet()
+        public static PingReply PingInternet()
         {
-            return TestPing("http://8.8.8.8");
+            return Ping(InternetURL);
         }
 
         public static bool IsTheInternetUp()
         {
-            return 0 <= TestPing("http://8.8.8.8");
+            return 0 <= Ping(InternetURL).RoundtripTime;
         }
 
-        public static bool IsTheIntranetUp()
+        public static bool IsTheGatewayUp()
         {
-            return 0 <= TestPing(GetDefaultGateway()+"",50);
+            return 0 <= Ping(GetDefaultGateway() + "", PingShortTimeout).RoundtripTime;
+        }
+
+        public static string FormatURL(string url)
+        {
+            url = url.Trim();
+            if (url.IndexOf("http://") != 0)
+                url = "http://" + url;
+            return url;
         }
 
         public static IPAddress GetLocalIPAddress()

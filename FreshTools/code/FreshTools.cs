@@ -38,17 +38,17 @@ namespace FreshTools
 
             NetworkMonitor netMan = new NetworkMonitor();
             //netMan.TestWriteToDB();
-            LogSystem.Log("NetworkMonitor.IsTheIntranetUp() - " + NetworkMonitor.IsTheIntranetUp());
+            LogSystem.Log("NetworkMonitor.IsTheIntranetUp() - " + NetworkMonitor.IsTheGatewayUp());
             LogSystem.Log("NetworkMonitor.IsTheInternetUp() - " + NetworkMonitor.IsTheInternetUp());
 
-            NetworkMonitor.TestPing("1.2.3.4");
-            NetworkMonitor.TestPing(NetworkMonitor.GetLocalIPAddress() + "");
-            NetworkMonitor.TestPing(NetworkMonitor.GetDefaultGateway() + "");
-            NetworkMonitor.TestPing("http://www.checkupdown.com/accounts/grpb/B1394343/");
-            NetworkMonitor.TestPing("www.gooogle.com");
-            NetworkMonitor.TestPing("8.8.8.8");
-            NetworkMonitor.TestPing("209.164.2.138");
-            NetworkMonitor.TestPing("freshprogramming.com");
+            NetworkMonitor.Ping("1.2.3.4");
+            NetworkMonitor.Ping(NetworkMonitor.GetLocalIPAddress() + "");
+            NetworkMonitor.Ping(NetworkMonitor.GetDefaultGateway() + "");
+            NetworkMonitor.Ping("http://www.checkupdown.com/accounts/grpb/B1394343/");
+            NetworkMonitor.Ping("www.gooogle.com");
+            NetworkMonitor.Ping("8.8.8.8");
+            NetworkMonitor.Ping("209.164.2.138");
+            NetworkMonitor.Ping("freshprogramming.com");
 
             NetworkMonitor.TestWebPage("1.2.3.4");
             NetworkMonitor.TestWebPage(NetworkMonitor.GetLocalIPAddress() + "");
