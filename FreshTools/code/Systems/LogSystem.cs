@@ -13,6 +13,9 @@ namespace FreshTools
         private static int logFileCount = 9;//This can only handle up to single digits
         private static int logHistoryCount = 50;
 
+        public static string TimeStampFormat = "MM/dd/yyyy hh:mm:ss:ffff tt :: ";
+        public static bool IncludeTimeStampInConsole = false;
+
         //data
         private static int exceptionCount = 0;
         private static List<string> logRecords = new List<string>(logHistoryCount);
@@ -56,16 +59,19 @@ namespace FreshTools
 
         public static void Log(string log)
         {
-            string timeStamp = DateTime.Now.ToString("MM/dd/yyyy hh:mm:ss:ffff tt");
-            log = timeStamp + "::" + log;
-            AppendLog(log);
+            string timeStamp = DateTime.Now.ToString(TimeStampFormat);
+            string timeStampedLog = timeStamp + log;
+            AppendLog(timeStampedLog);
+
+            if (IncludeTimeStampInConsole)
+                log = timeStamp + log;
             Console.WriteLine(log);
 
             lock (logFileLock)
             {
                 using (StreamWriter sw = (File.Exists(logFileName)) ? File.AppendText(logFileName) : File.CreateText(logFileName))
                 {
-                    sw.WriteLine(log);
+                    sw.WriteLine(timeStampedLog);
                     sw.Flush();
                     sw.Close();
                 }
