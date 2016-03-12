@@ -89,7 +89,6 @@ namespace FreshTools
 
         public void LoadConfig()
         {
-            LogSystem.Log("Loading Config");
             settingsFile = new VariablesFile(configFilePath, null, false);
             VariableLibrary vars = settingsFile.variables;
             

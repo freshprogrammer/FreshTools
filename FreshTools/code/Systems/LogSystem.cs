@@ -18,8 +18,10 @@ namespace FreshTools
         public static bool IncludeTimeStampInConsole = false;
         public static LogLevel ConsoleLogLevel = LogLevel.Information;
         public static LogLevel LogFileLogLevel = LogLevel.Verbose;
+        public static int LogCount { get { return logCount; } set { } }
 
         //data
+        private static int logCount = 0;
         private static int exceptionCount = 0;
         private static List<LogRecord> logRecords = new List<LogRecord>(logHistoryCount);
 
@@ -98,11 +100,6 @@ namespace FreshTools
             return ++exceptionCount;
         }
 
-        public static int GetLogCount()
-        {
-            return logRecords.Count;
-        }
-
         /// <summary>
         /// Returns X log records sepereated by line feeds
         /// </summary>
@@ -131,6 +128,7 @@ namespace FreshTools
 
         private static void AppendLog(LogRecord log)
         {
+            logCount++;
             //not a great implementation but it works. Total waste of ReShuffleing RAM when full and removing
             if (logRecords.Count == logRecords.Capacity)
                 logRecords.RemoveAt(0);
