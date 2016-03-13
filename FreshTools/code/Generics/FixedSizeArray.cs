@@ -171,7 +171,7 @@ namespace FreshTools
         /// object is ignored.
         /// </summary>
         /// <param name="objct">Object to be added</param>
-        public sealed void Add(T objct)
+        public void Add(T objct)
         {
             Debug.Assert(mCount < mContents.Length, "Array exhausted! (" + mCount + ")");
             if (mCount < mContents.Length)
@@ -188,7 +188,7 @@ namespace FreshTools
         /// </summary>
         /// <param name="objct">Object to try and add</param>
         /// <param name="ignoreComparator">Should the lookup ignore the comparator</param>
-        public sealed void AddDistinct(T objct, bool ignoreComparator)
+        public void AddDistinct(T objct, bool ignoreComparator)
         {
             if (Find(objct, ignoreComparator) == -1)
             {
@@ -202,7 +202,7 @@ namespace FreshTools
         /// remaining objects are ignored.
         /// </summary>
         /// <param name="array">Array to add</param>
-        public sealed void AddArray(FixedSizeArray<T> array)
+        public void AddArray(FixedSizeArray<T> array)
         {
             foreach (T t in array)
             {
@@ -216,7 +216,7 @@ namespace FreshTools
         /// </summary>
         /// <param name="array">Array to add</param>
         /// <param name="ignoreComparator">Should this add ignore comparitor</param>
-        public sealed void AddDistinctArray(FixedSizeArray<T> array, bool ignoreComparator)
+        public void AddDistinctArray(FixedSizeArray<T> array, bool ignoreComparator)
         {
             foreach (T t in array)
             {
