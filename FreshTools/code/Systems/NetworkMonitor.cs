@@ -31,8 +31,15 @@ namespace FreshTools
             LogSystem.Log("NetworkMonitor.IsTheIntranetUp() - " + NetworkMonitor.IsTheGatewayUp());
             LogSystem.Log("NetworkMonitor.IsTheInternetUp() - " + NetworkMonitor.IsTheInternetUp());
 
-            new WebTestThread("www.google.com", true, true);
+            WebTestThread t1 = new WebTestThread(NetworkMonitor.GetLocalIPAddress()+"", true, false);
+            WebTestThread t2 = new WebTestThread(NetworkMonitor.GetDefaultGateway() + "", true, false);
+            WebTestThread t3= new WebTestThread("www.google.com", true, true);
 
+            t1.Start();
+            t2.Start();
+            t3.Start();
+
+            /*
             Ping("1.2.3.4");
             Ping(NetworkMonitor.GetLocalIPAddress() + "");
             Ping(NetworkMonitor.GetDefaultGateway() + "");
@@ -61,6 +68,17 @@ namespace FreshTools
             TestWebPage("8.8.8.8");
             TestWebPage("209.164.2.138");
             TestWebPage("freshprogramming.com");
+             */
+        }
+
+        public void TestCode1()
+        {
+
+        }
+
+        public void TestCode2()
+        {
+
         }
 
         private static void PingCompleted(object o, PingCompletedEventArgs args)
@@ -73,7 +91,7 @@ namespace FreshTools
 
         public static PingReply Ping(string url, int timeout = -1)
         {
-            LogSystem.Log("Ping('" + url + "')");
+            //LogSystem.Log("Ping('" + url + "')");
 
             url = FormatURL(url);
             if (url == null || url.Length==0)
@@ -90,7 +108,7 @@ namespace FreshTools
             {
                 return new Ping().Send(uri.DnsSafeHost, PingTimeout);
             }
-            catch (PingException e)
+            catch (PingException)
             {
                 return null;
             }
@@ -98,7 +116,7 @@ namespace FreshTools
 
         private static void PingAsync(string url, int timeout = -1)
         {
-            LogSystem.Log("PingAsync('" + url + "')");
+            //LogSystem.Log("PingAsync('" + url + "')");
 
             url = FormatURL(url);
             if (url == null || url.Length == 0)
@@ -136,7 +154,7 @@ namespace FreshTools
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
                     pageExists = response.StatusCode == HttpStatusCode.OK;
-                    LogSystem.Log("TestWebPage('" + url + "') - " + response.StatusCode);
+                    //LogSystem.Log("TestWebPage('" + url + "') - " + response.StatusCode);
                 }
             }
             catch (UriFormatException e)
@@ -242,41 +260,41 @@ namespace FreshTools
 
     public class WebTestThread
     {
-        private Thread checkThread;
-        private String testSite;
+        private Thread testThread;
+        private String site;
         private bool testPing;
         private bool testWebPage;
+        private bool sitePings = false;
+        private bool sitePageReturns = false;
+
         public bool Running;
-        public int testInterval = 2000;
+        public int TestInterval = 5000;
 
 
         public WebTestThread(string site, bool testPing, bool testWebPage)
         {
             this.testPing = testPing;
             this.testWebPage = testWebPage;
-            testSite = site;
+            this.site = site;
             Running = false;
-
-            checkThread = new Thread(Run);
-            checkThread.Start();
         }
 
         public void Run()
         {
-            Thread.CurrentThread.Name = "WebTestThread("+testSite+")";
-            Running = true;
-
             try
             {
                 while (Running)
                 {
-                    LogSystem.Log("running");
-                    NetworkMonitor.TestWebPage(testSite);
+                    if (testPing)
+                        sitePings = NetworkMonitor.Ping(site)!=null;
+                    if(testWebPage)
+                        sitePageReturns = NetworkMonitor.TestWebPage(site);
 
-                    Thread.Sleep(testInterval);
+                    LogSystem.Log("("+sitePings+","+sitePageReturns+") from "+site);
+                    Thread.Sleep(TestInterval);
                 }
             }
-            catch (ThreadInterruptedException)
+            catch (ThreadAbortException)
             {
 
             }
@@ -284,6 +302,21 @@ namespace FreshTools
             {
 
             }
+        }
+
+        public void Start()
+        {
+            Running = true;
+            testThread = new Thread(Run);
+            testThread.Start();
+            testThread.Name = "WebTestThread(" + site + ")";
+        }
+
+        public void Stop()
+        {
+            Running = false;
+            testThread.Abort();
+            testThread = null;
         }
     }
 }
