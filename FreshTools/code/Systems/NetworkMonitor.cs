@@ -16,7 +16,7 @@ namespace FreshTools
         public static int PageTimeout = 1000;
         public static int PingShortTimeout = 50;
 
-        private List<WebTestThread> siteTesters;
+        private List<NetworkMonitorThread> monitorThreads;
 
         static NetworkMonitor()
         {
@@ -25,17 +25,17 @@ namespace FreshTools
 
         public NetworkMonitor()
         {
-            siteTesters = new List<WebTestThread>();
+            monitorThreads = new List<NetworkMonitorThread>();
         }
 
         public void AddMonitor(string site, bool testPing, bool testWebPage)
         {
-            siteTesters.Add(new WebTestThread(site,testPing,testWebPage));
+            monitorThreads.Add(new NetworkMonitorThread(site,testPing,testWebPage));
         }
 
         public void StartMonitoring()
         {
-            foreach (WebTestThread t in siteTesters)
+            foreach (NetworkMonitorThread t in monitorThreads)
             {
                 t.Start();
             }
@@ -43,7 +43,7 @@ namespace FreshTools
 
         public void StopMonitoring()
         {
-            foreach (WebTestThread t in siteTesters)
+            foreach (NetworkMonitorThread t in monitorThreads)
             {
                 t.Stop();
             }
@@ -55,9 +55,9 @@ namespace FreshTools
             LogSystem.Log("NetworkMonitor.IsTheIntranetUp() - " + NetworkMonitor.IsTheGatewayUp());
             LogSystem.Log("NetworkMonitor.IsTheInternetUp() - " + NetworkMonitor.IsTheInternetUp());
 
-            WebTestThread t1 = new WebTestThread(NetworkMonitor.GetLocalIPAddress()+"", true, false);
-            WebTestThread t2 = new WebTestThread(NetworkMonitor.GetDefaultGateway() + "", true, false);
-            WebTestThread t3= new WebTestThread("www.google.com", true, true);
+            NetworkMonitorThread t1 = new NetworkMonitorThread(NetworkMonitor.GetLocalIPAddress()+"", true, false);
+            NetworkMonitorThread t2 = new NetworkMonitorThread(NetworkMonitor.GetDefaultGateway() + "", true, false);
+            NetworkMonitorThread t3= new NetworkMonitorThread("www.google.com", true, true);
 
             t1.Start();
             t2.Start();
@@ -272,7 +272,7 @@ namespace FreshTools
         }
     }
 
-    public class WebTestThread
+    public class NetworkMonitorThread
     {
         private Thread testThread;
         private String site;
@@ -285,7 +285,7 @@ namespace FreshTools
         public int TestInterval = 5000;
 
 
-        public WebTestThread(string site, bool testPing, bool testWebPage)
+        public NetworkMonitorThread(string site, bool testPing, bool testWebPage)
         {
             this.testPing = testPing;
             this.testWebPage = testWebPage;
@@ -304,7 +304,7 @@ namespace FreshTools
                     if(testWebPage)
                         sitePageReturns = NetworkMonitor.TestWebPage(site);
 
-                    LogSystem.Log("("+sitePings+","+sitePageReturns+") from "+site);
+                    //LogSystem.Log("("+sitePings+","+sitePageReturns+") from "+site);
                     Thread.Sleep(TestInterval);
                 }
             }
@@ -323,7 +323,8 @@ namespace FreshTools
             Running = true;
             testThread = new Thread(Run);
             testThread.Start();
-            testThread.Name = "WebTestThread(" + site + ")";
+            testThread.Name = "NetworkMonitorThread(" + site + ")";
+            testThread.Priority = ThreadPriority.BelowNormal;
         }
 
         public void Stop()
