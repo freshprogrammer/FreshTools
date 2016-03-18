@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -15,6 +16,8 @@ namespace FreshTools
         public static int PageTimeout = 1000;
         public static int PingShortTimeout = 50;
 
+        private List<WebTestThread> siteTesters;
+
         static NetworkMonitor()
         {
 
@@ -22,7 +25,28 @@ namespace FreshTools
 
         public NetworkMonitor()
         {
+            siteTesters = new List<WebTestThread>();
+        }
 
+        public void AddMonitor(string site, bool testPing, bool testWebPage)
+        {
+            siteTesters.Add(new WebTestThread(site,testPing,testWebPage));
+        }
+
+        public void StartMonitoring()
+        {
+            foreach (WebTestThread t in siteTesters)
+            {
+                t.Start();
+            }
+        }
+
+        public void StopMonitoring()
+        {
+            foreach (WebTestThread t in siteTesters)
+            {
+                t.Stop();
+            }
         }
 
         public static void TestCode()
@@ -69,16 +93,6 @@ namespace FreshTools
             TestWebPage("209.164.2.138");
             TestWebPage("freshprogramming.com");
              */
-        }
-
-        public void TestCode1()
-        {
-
-        }
-
-        public void TestCode2()
-        {
-
         }
 
         private static void PingCompleted(object o, PingCompletedEventArgs args)
