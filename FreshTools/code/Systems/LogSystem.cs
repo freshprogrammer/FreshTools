@@ -79,16 +79,8 @@ namespace FreshTools
             LogRecord rec = new LogRecord(log, methodName, logLevel, tag);
             AppendLog(rec);
 
-            string timeStamp = rec.Time.ToString(TimeStampFormat);
-            string consoleOutput = rec.Method + "-" + rec.Message;
-            string logFileOutput = timeStamp + "::" + rec.Method + "-" + rec.Message;
-
             if (rec.LogLevel <= ConsoleLogLevel)
-            {
-                if (IncludeTimeStampInConsole)
-                    consoleOutput = timeStamp + consoleOutput;
-                Console.WriteLine(consoleOutput);
-            }
+                Console.WriteLine(rec.ToConsoleString(IncludeTimeStampInConsole, TimeStampFormat));
 
             if (rec.LogLevel <= LogFileLogLevel)
             {
@@ -96,7 +88,7 @@ namespace FreshTools
                 {
                     using (StreamWriter sw = (File.Exists(logFileName)) ? File.AppendText(logFileName) : File.CreateText(logFileName))
                     {
-                        sw.WriteLine(logFileOutput);
+                        sw.WriteLine(rec.ToLogFileString(TimeStampFormat));
                         sw.Flush();
                         sw.Close();
                     }
@@ -176,6 +168,18 @@ namespace FreshTools
             LogLevel = level;
             Tag = tag;
             Time = time;
+        }
+
+        public string ToConsoleString(bool includeDate, string timeFormat)
+        {
+            if (includeDate)
+                return Time.ToString(timeFormat) + "::" + Method + "-" + Message;
+            return Method + "-" + Message;
+        }
+
+        public string ToLogFileString(string timeFormat)
+        {
+            return Time.ToString(timeFormat) + "::" + Method + "-" + Message;
         }
 
         public override string ToString()
