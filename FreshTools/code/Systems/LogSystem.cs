@@ -12,7 +12,9 @@ namespace FreshTools
         private static object logFileLock = new Object();
         private static string logFileName = @"log.txt";
         private static int logFileCount = 9;//This can only handle up to single digits
-        private static int logHistoryCount = 50;//number of records to hold in memory
+
+        private const int LOG_MEMORY_DEFAULT_COUNT = 10000;
+        private static int logMemoryCount;//number of records to hold in memory
 
         public static string TimeStampFormat = "MM/dd/yyyy HH:mm:ss:ffff";
         public static bool IncludeTimeStampInConsole = false;
@@ -23,25 +25,31 @@ namespace FreshTools
         //data
         private static int logCount = 0;
         private static int exceptionCount = 0;
-        private static FixedSizeArray<LogRecord> logRecords = new FixedSizeArray<LogRecord>(logHistoryCount);
-
+        private static FixedSizeArray<LogRecord> logRecords;
 
         /// <summary>
         /// Create Log file with rolling logs in users local appdata folder for this application
         /// </summary>
-        public static void Init()
+        public static void Init(int logMemoryCount = LOG_MEMORY_DEFAULT_COUNT)
         {
             //C:\Users\USER\AppData\Local\APPNAME\logs\log.txt
             string logFile = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\logs\" + logFileName;
-            Init(logFile);
+            Init(logFile, logMemoryCount);
         }
 
         /// <summary>
         /// Create Log file with rolling logs - move log to next log file up (1 to 2) up to the limit
         /// </summary>
         /// <param name="logFileFullName">full path to destination log file</param>
-        public static void Init(string logFileFullName)
+        public static void Init(string logFileFullName, int logMemoryCount = LOG_MEMORY_DEFAULT_COUNT)
         {
+            //setup local variables
+            LogSystem.logMemoryCount = logMemoryCount;
+            logCount = 0;
+            exceptionCount = 0;
+            logRecords = new FixedSizeArray<LogRecord>(logMemoryCount);
+
+            //setup log file(s)
             logFileName = logFileFullName;
             int logStorageMax = logFileCount;//single digits
             int logIndex = logStorageMax;
@@ -59,6 +67,7 @@ namespace FreshTools
             //create any necisarry directories for logs
             Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
 
+            //create first log record
             Log(Assembly.GetExecutingAssembly().GetName().Name + " (v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version) + ")");
         }
 
