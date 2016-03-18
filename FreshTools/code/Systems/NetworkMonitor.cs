@@ -31,6 +31,8 @@ namespace FreshTools
             LogSystem.Log("NetworkMonitor.IsTheIntranetUp() - " + NetworkMonitor.IsTheGatewayUp());
             LogSystem.Log("NetworkMonitor.IsTheInternetUp() - " + NetworkMonitor.IsTheInternetUp());
 
+            new WebTestThread("www.google.com", true, true);
+
             Ping("1.2.3.4");
             Ping(NetworkMonitor.GetLocalIPAddress() + "");
             Ping(NetworkMonitor.GetDefaultGateway() + "");
@@ -235,6 +237,53 @@ namespace FreshTools
                 }
             }
             return null;
+        }
+    }
+
+    public class WebTestThread
+    {
+        private Thread checkThread;
+        private String testSite;
+        private bool testPing;
+        private bool testWebPage;
+        public bool Running;
+        public int testInterval = 2000;
+
+
+        public WebTestThread(string site, bool testPing, bool testWebPage)
+        {
+            this.testPing = testPing;
+            this.testWebPage = testWebPage;
+            testSite = site;
+            Running = false;
+
+            checkThread = new Thread(Run);
+            checkThread.Start();
+        }
+
+        public void Run()
+        {
+            Thread.CurrentThread.Name = "WebTestThread("+testSite+")";
+            Running = true;
+
+            try
+            {
+                while (Running)
+                {
+                    LogSystem.Log("running");
+                    NetworkMonitor.TestWebPage(testSite);
+
+                    Thread.Sleep(testInterval);
+                }
+            }
+            catch (ThreadInterruptedException)
+            {
+
+            }
+            finally
+            {
+
+            }
         }
     }
 }
