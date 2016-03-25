@@ -30,19 +30,23 @@ namespace FreshTools
         #region Setup and teardown
         static WindowManager()
         {
+            //every set of sizes that uses a third should also use the round up to ensure they utilize all of the screen
+            float oneThird = 1f/3f;
+            float oneThirdRoundUp = 1 - 2 * oneThird;//catch rounding error for last third
+
             cornerSizes = new List<RectangleF>(3);
             cornerSizes.Add(new RectangleF(0, 0, 0.5f,  0.5f));
-            cornerSizes.Add(new RectangleF(0, 0, 0.667f, 0.5f));
-            cornerSizes.Add(new RectangleF(0, 0, 0.333f, 0.5f));
+            cornerSizes.Add(new RectangleF(0, 0, 1-oneThirdRoundUp, 0.5f));
+            cornerSizes.Add(new RectangleF(0, 0, oneThird, 0.5f));
             
             sideSizes = new List<RectangleF>(3);
             sideSizes.Add(new RectangleF(0, 0, 0.5f,  1));
-            sideSizes.Add(new RectangleF(0, 0, 0.667f, 1));
-            sideSizes.Add(new RectangleF(0, 0, 0.333f, 1));
+            sideSizes.Add(new RectangleF(0, 0, 1-oneThirdRoundUp, 1));
+            sideSizes.Add(new RectangleF(0, 0, oneThird, 1));
 
             topSizes = new List<RectangleF>(2);
             topSizes.Add(new RectangleF(0, 0, 1, 0.5f));
-            topSizes.Add(new RectangleF(0.33f, 0, 0.334f, 0.5f));
+            topSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 0.5f));
         }
 
         private static void EnableHotKeys()
