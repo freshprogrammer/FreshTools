@@ -97,6 +97,7 @@ namespace FreshTools
             WindowManager.HotKeysEnabled = vars.GetVariable("EnableWindowManager", ref windowHotKeys, true).Boolean;
 
             //vars.GetVariable("testVariable", ref testVariable, true);
+            LogSystem.Log("Finisihed loading config");
         }
 
         /// <summary>
