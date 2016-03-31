@@ -18,7 +18,7 @@ namespace FreshTools
         }
 
         /// <summary>
-        /// Calculates angle from Point 1, to Point 2. Result returned in degrees
+        /// Calculates angle from Point 1, to Point 2. Result in degrees
         /// </summary>
         /// <param name="x1">X cord of Point 1</param>
         /// <param name="y1">Y cord of Point 1</param>
