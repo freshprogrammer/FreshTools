@@ -9,17 +9,25 @@ using System.Windows.Forms;
 namespace FreshTools
 {
     /// <summary>
-    /// Created as a replacement for the discontinued winsplit revolution on windows 10
+    /// Created as a Windows 10 replacement for the discontinued winsplit revolution
     /// </summary>
     public static class WindowManager
     {
         const float ComparisonRoundingLimit = 0.001f;//this will be to be broader for lower resolutions since they have less pixes to round to
 
+        //public ajustable settings
         public static bool WrapLeftRightScreens = true;
         public static bool HotKeysEnabled { get { return hotKeysEnabled; } set { if (value)EnableHotKeys(); else DisableHotKeys(); } }
 
+        //private local variables
         private static bool hotKeysEnabled = false;
 
+        //window info for saving and restoring window possitions
+        private static DateTime windowInfoSaveTime = DateTime.MinValue;
+        private static List<WindowInfo> windowInfos = new List<WindowInfo>();
+        private static List<WindowInfo> windowInfosBackup = new List<WindowInfo>();
+
+        //snap region sizes
         private static List<RectangleF> cornerSizes;
         private static List<RectangleF> topSizes;
         private static List<RectangleF> sideSizes;
@@ -88,10 +96,10 @@ namespace FreshTools
         #endregion
 
         #region External functions
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         public static extern IntPtr GetForegroundWindow();
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         public static extern bool GetWindowRect(IntPtr hwnd, ref Rect Rect);
 
         [Serializable, StructLayout(LayoutKind.Sequential)]
@@ -113,7 +121,7 @@ namespace FreshTools
         }
 
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
-        public static extern IntPtr SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
+        public static extern bool SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr GetShellWindow();
@@ -127,7 +135,7 @@ namespace FreshTools
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern bool IsWindowVisible(IntPtr hWnd);
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
         #endregion
 
@@ -570,22 +578,91 @@ namespace FreshTools
         }
         #endregion
 
-        public static void TestFindAllVisibleWindows()
+        #region Save & Restore all window positions
+        public static void SaveAllWindowPositions()
+        {
+            SaveAllWindowPositions(ref windowInfos);
+        }
+
+        public static void RestoreAllWindowPositions()
+        {
+            RestoreAllWindowPositions(true);
+        }
+
+        public static void UndoRestoreAllWindowPositions()
+        {
+            RestoreAllWindowPositions(false);
+        }
+
+        private static void SaveAllWindowPositions(ref List<WindowInfo> saveInfos)
         {
             var windows = FindAllVisibleWindows();
-            Rect workspaceRect = new Rect();
+            saveInfos.Clear();
 
-            int count = 0;
             foreach (IntPtr w in windows)
             {
-                count++;
-                GetWindowRect(w, ref workspaceRect);
-
-                LogSystem.Log("Window(" + w + ") is " + GetWindowText(w) + " at " + workspaceRect.ToRectangle());
-
+                WindowInfo wInfo = new WindowInfo(w);
+                saveInfos.Add(wInfo);
             }
-            LogSystem.Log("FindAllVisibleWindows()  returns " + count + " windows");
+            LogSystem.Log("Saved " + saveInfos.Count + " window positions");
         }
+
+        private static void RestoreAllWindowPositions(bool normalRestore)
+        {
+            if (normalRestore)
+                SaveAllWindowPositions(ref windowInfosBackup);
+
+            var restoreInfos = normalRestore ? windowInfos : windowInfosBackup;
+            int successCount = 0;
+            foreach (WindowInfo i in restoreInfos)
+            {
+                if (i.RestorePosition())
+                    successCount++;
+            }
+
+            if (normalRestore)
+                LogSystem.Log("Restored " + successCount + "/" + restoreInfos.Count + " window positions");
+            else
+                LogSystem.Log("Reset " + successCount + "/" + restoreInfos.Count + " window positions");
+        }
+
+        private class WindowInfo
+        {
+            public IntPtr Handle;
+            public Rectangle Rectangle;
+            public string Text;
+
+            public WindowInfo(IntPtr hwnd)
+            {
+                Handle = hwnd;
+
+                Text = GetWindowText(Handle);
+
+                Rect rect = default(Rect);
+                GetWindowRect(Handle, ref rect);
+                Rectangle = rect.ToRectangle();
+            }
+
+            public bool RestorePosition()
+            {
+                const short SWP_NOSIZE = 0;
+                //const short SWP_NOMOVE = 0X2;
+                const short SWP_NOZORDER = 0X4;
+                const int SWP_SHOWWINDOW = 0x0040;
+
+                if (Handle != IntPtr.Zero)
+                {
+                    return SetWindowPos(Handle, 0, Rectangle.X, Rectangle.Y, Rectangle.Width, Rectangle.Height, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                }
+                return false;
+            }
+
+            public override string ToString()
+            {
+                return "WindowInfo() - "+Text + " {" + Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "}";
+            }
+        }
+        #endregion
 
         private enum SnapDirection
         {
