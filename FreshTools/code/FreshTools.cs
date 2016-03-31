@@ -56,8 +56,12 @@ namespace FreshTools
             startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
 
-            MenuItem windowHotKeysEnabledManagerMenuItem = new MenuItem("Window Control Hot Keys");
-            windowHotKeysEnabledManagerMenuItem.Checked = WindowManager.HotKeysEnabled;
+            MenuItem windowManagerHotKeysEnabledMenuItem = new MenuItem("Window Control Hot Keys");
+            windowManagerHotKeysEnabledMenuItem.Checked = WindowManager.HotKeysEnabled;
+
+            MenuItem windowManagerSaveWindowsMenuItem = new MenuItem("Save All Window Positions");
+            MenuItem windowManagerRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions");
+            MenuItem windowManagerUndoRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions (undo)");
 
             MenuItem quitMenuItem = new MenuItem("Quit");
 
@@ -65,14 +69,20 @@ namespace FreshTools
             contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(breakMenuItem);
             contextMenu.MenuItems.Add(startIdlePreventionMenuItem);
-            contextMenu.MenuItems.Add(windowHotKeysEnabledManagerMenuItem);
+            contextMenu.MenuItems.Add(windowManagerHotKeysEnabledMenuItem);
+            contextMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
+            contextMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
+            contextMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
             contextMenu.MenuItems.Add(quitMenuItem);
             freshToolsNotifyIcon.ContextMenu = contextMenu;
 
             // Wire up menu items
             startIdlePreventionMenuItem.Click += startIdlePreventionMenuItem_Click;
             stopIdlePreventionMenuItem.Click += stopIdlePreventionMenuItem_Click;
-            windowHotKeysEnabledManagerMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
+            windowManagerHotKeysEnabledMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
+            windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
+            windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
+            windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
             quitMenuItem.Click += quitMenuItem_Click;
         }
 
@@ -171,21 +181,31 @@ namespace FreshTools
             //register hotkey(s)
             //GenericsClass.LogSystem("Registering Hotkeys");
             HotKeyManager.GenericHotKeyPressedHandler += new EventHandler<HotKeyEventArgs>(GenericHotKeyPressed);
-            HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.Oemtilde);
+            //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.C);
+            //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.X);
+            //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.Z);
         }
 
         private static void GenericHotKeyPressed(object sender, HotKeyEventArgs args)
         {
             try
             {
-                if (args.Modifiers == (KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift) && args.Key == Keys.Oemtilde)
+                if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.C)
                 {
-                    LogSystem.Log("FreshTools.HotKeyPressed() - Super Tilde - " + args.Modifiers + "+" + args.Key + "");
+                    //WindowManager.SaveAllWindowPositions();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.X)
+                {
+                    //WindowManager.RestoreAllWindowPositions();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.Z)
+                {
+                    //WindowManager.UndoRestoreAllWindowPositions();
                 }
                 else //unknown hot key pressed
                 {
                     //uncaught hotkey
-                    LogSystem.Log("FreshTools.HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
+                    LogSystem.Log("UnActioned - " + args.Modifiers + "+" + args.Key + "");
                 }
             }
             catch (Exception e)

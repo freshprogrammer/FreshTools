@@ -579,17 +579,17 @@ namespace FreshTools
         #endregion
 
         #region Save & Restore all window positions
-        public static void SaveAllWindowPositions()
+        public static void SaveAllWindowPositions(object sender = null, EventArgs e = null)
         {
             SaveAllWindowPositions(ref windowInfos);
         }
 
-        public static void RestoreAllWindowPositions()
+        public static void RestoreAllWindowPositions(object sender = null, EventArgs e = null)
         {
             RestoreAllWindowPositions(true);
         }
 
-        public static void UndoRestoreAllWindowPositions()
+        public static void UndoRestoreAllWindowPositions(object sender = null, EventArgs e = null)
         {
             RestoreAllWindowPositions(false);
         }
