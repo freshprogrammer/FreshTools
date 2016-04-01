@@ -331,6 +331,7 @@ namespace FreshTools
         private bool testWebPage;
         private bool sitePings = false;
         private bool sitePageReturns = false;
+        private bool reportNextRun = true;//true to report first run
 
         public bool Running;
         public int TestInterval = 5000;
@@ -353,10 +354,25 @@ namespace FreshTools
                     if (testPing)
                     {
                         PingReply pingReply = NetworkMonitor.Ping(site);
-                        sitePings = pingReply != null && pingReply.Status == IPStatus.Success;
+                        bool sitePingsNow = pingReply != null && pingReply.Status == IPStatus.Success;
+                        if (reportNextRun || sitePingsNow != sitePings)
+                        {
+                            //status changed - report it
+                            sitePings = sitePingsNow;
+                            ReportPingStatusChange(sitePageReturns);
+                        }
                     }
-                    if(testWebPage)
-                        sitePageReturns = NetworkMonitor.TestWebPage(site);
+                    if (testWebPage)
+                    {
+                        bool sitePageReturnsNow = NetworkMonitor.TestWebPage(site);
+                        if (reportNextRun || sitePageReturnsNow != sitePageReturns)
+                        {
+                            //status changed - report it
+                            sitePageReturns = sitePageReturnsNow;
+                            ReportPageStatusChange(sitePageReturns);
+                        }
+                    }
+                    reportNextRun = false;
 
                     //LogSystem.Log("("+sitePings+","+sitePageReturns+") from "+site);
                     Thread.Sleep(TestInterval);
@@ -370,6 +386,18 @@ namespace FreshTools
             {
 
             }
+        }
+
+        private void ReportPingStatusChange(bool upNow)
+        {
+            //stub
+            LogSystem.Log(site + " ping now = " + upNow);
+        }
+
+        private void ReportPageStatusChange(bool upNow)
+        {
+            //stub
+            LogSystem.Log(site + " page up now = " + upNow);
         }
 
         public void Start()
