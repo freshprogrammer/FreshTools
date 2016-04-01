@@ -36,6 +36,7 @@ namespace FreshTools
 
             LogSystem.Log("FreshTools started sucsessfully");
 
+            LogSystem.ConsoleLogLevel = LogLevel.Verbose;
             NetworkMonitor netMan = new NetworkMonitor();
             //netMan.TestCode();
             netMan.AddMonitor("www.gogle.com", true, true);

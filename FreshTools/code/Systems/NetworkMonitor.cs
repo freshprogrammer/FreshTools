@@ -11,17 +11,23 @@ namespace FreshTools
 {
     class NetworkMonitor
     {
+        protected const string LOG_TAG = "NetworkMonitor";
+        
+        //to disable logging every single test attampt and fail - non networking errors like bad URIs still reported
+        private static bool pingLoggingEnabled = false;
+        private static bool pageTestLoggingEnabled = false;
+
         public static string InternetURL = "http://8.8.8.8";
         public static int PingTimeout = 1000;
         public static int PageTimeout = 1000;
         public static int PingShortTimeout = 50;
 
+        private static Thread managerThread;
+        private static bool managerRunning = false;
+        private static int managerThreadInterval = 1000;
+        private static NetworkStatus lastNetworkStatus = NetworkStatus.NoIntranet;
+
         private List<NetworkMonitorThread> monitorThreads;
-
-        static NetworkMonitor()
-        {
-
-        }
 
         public NetworkMonitor()
         {
@@ -35,18 +41,59 @@ namespace FreshTools
 
         public void StartMonitoring()
         {
+            managerThread = new Thread(new ThreadStart(ManagerRun));
+            managerThread.Name = "Networkonitor Manager";
+            managerThread.Start();
+
             foreach (NetworkMonitorThread t in monitorThreads)
             {
                 t.Start();
             }
+            LogSystem.Log("Started Sucsessfully ("+monitorThreads.Count+") monitors", LogLevel.Verbose, LOG_TAG);
         }
 
         public void StopMonitoring()
         {
+            managerRunning = false;
+            managerThread = null;
             foreach (NetworkMonitorThread t in monitorThreads)
             {
                 t.Stop();
             }
+            LogSystem.Log("Stopped Sucsessfully (" + monitorThreads.Count + ") monitors", LogLevel.Verbose, LOG_TAG);
+        }
+
+        private void ManagerRun()
+        {
+            managerRunning = true;
+            while (managerRunning)
+            {
+                NetworkStatus currentNetStat = GetNetworkstatus();
+                if (currentNetStat != lastNetworkStatus)
+                {
+                    //status chaged
+                    LogSystem.Log("Network status changed",LogLevel.Warning, LOG_TAG);
+                }
+
+                try
+                {
+                    Thread.Sleep(managerThreadInterval);
+                }
+                catch(ThreadInterruptedException)
+                {
+                    //manager thred stoped
+                }
+            }
+        }
+
+        private static NetworkStatus GetNetworkstatus()
+        {
+            if (IsTheInternetUp())
+                return NetworkStatus.AllGood;
+            else if (IsTheInternetUp())
+                return NetworkStatus.NoInternet;
+            else
+                return NetworkStatus.NoIntranet;
         }
 
         public static void TestCode()
@@ -105,12 +152,10 @@ namespace FreshTools
 
         public static PingReply Ping(string url, int timeout = -1)
         {
-            //LogSystem.Log("Ping('" + url + "')");
-
             url = FormatURL(url);
             if (url == null || url.Length==0)
             {
-                LogSystem.Log("Ping('" + url + "') - Failed - invalid url");
+                LogSystem.Log("Ping('" + url + "') - Failed - invalid url", LogLevel.Error, LOG_TAG);
                 return null;
             }
 
@@ -120,15 +165,18 @@ namespace FreshTools
             Uri uri = new Uri(url);
             try
             {
-                return new Ping().Send(uri.DnsSafeHost, PingTimeout);
+                PingReply pr = new Ping().Send(uri.DnsSafeHost, PingTimeout);
+                if (pingLoggingEnabled) LogSystem.Log("Ping('" + url + "') - succeeded", LogLevel.Verbose, LOG_TAG);
+                return pr;
             }
             catch (PingException)
             {
+                if (pingLoggingEnabled) LogSystem.Log("Ping('" + url + "') - Failed - PingException", LogLevel.Error, LOG_TAG);
                 return null;
             }
         }
 
-        private static void PingAsync(string url, int timeout = -1)
+        /*private static void PingAsync(string url, int timeout = -1)
         {
             //LogSystem.Log("PingAsync('" + url + "')");
 
@@ -147,14 +195,14 @@ namespace FreshTools
             Ping ping = new Ping();
             ping.PingCompleted += PingCompleted;
             ping.SendAsync(uri.DnsSafeHost, PingTimeout, waiter);
-        }
+        }*/
 
         public static bool TestWebPage(string url)
         {
             url = FormatURL(url);
             if (url == null || url.Length == 0)
             {
-                LogSystem.Log("TestWebPage('" + url + "') - Failed - invalid url");
+                if (pageTestLoggingEnabled) LogSystem.Log("TestWebPage('" + url + "') - Failed - invalid url", LogLevel.Error, LOG_TAG);
                 return false;
             }
 
@@ -168,23 +216,23 @@ namespace FreshTools
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
                     pageExists = response.StatusCode == HttpStatusCode.OK;
-                    //LogSystem.Log("TestWebPage('" + url + "') - " + response.StatusCode);
+                    if (pageTestLoggingEnabled) LogSystem.Log("TestWebPage('" + url + "') - " + response.StatusCode, LogLevel.Verbose, LOG_TAG);
                 }
             }
             catch (UriFormatException e)
             {
-                LogSystem.Log("TestWebPage('" + url + "') - UriFormatException-" + e.Message);
+                LogSystem.Log("TestWebPage('" + url + "') - UriFormatException-" + e.Message, LogLevel.Error, LOG_TAG);
             }
             catch (WebException e)
             {
                 if (e.Message.IndexOf("(403)") != -1)
                 {
-                    LogSystem.Log("TestWebPage('" + url + "') - WebException-Forbidden-" + e.Message);
+                    LogSystem.Log("TestWebPage('" + url + "') - WebException-Forbidden-" + e.Message, LogLevel.Error, LOG_TAG);
                 }
                 else
                 {
                     //timed out
-                    LogSystem.Log("TestWebPage('" + url + "') - WebException-" + e.Message);
+                    if (pageTestLoggingEnabled) LogSystem.Log("TestWebPage('" + url + "') - WebException-" + e.Message, LogLevel.Warning, LOG_TAG);
                 }
             }
 
@@ -269,6 +317,13 @@ namespace FreshTools
                 }
             }
             return null;
+        }
+
+        private enum NetworkStatus
+        {
+            NoIntranet,
+            NoInternet,
+            AllGood,
         }
     }
 
