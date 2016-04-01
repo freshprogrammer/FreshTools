@@ -21,7 +21,7 @@ namespace FreshTools
         public static int PingTimeout = 1000;
         public static int PageTimeout = 1000;
         public static int PingShortTimeout = 50;
-
+        
         private static Thread managerThread;
         private static bool managerRunning = false;
         private static int managerThreadInterval = 1000;
@@ -72,8 +72,9 @@ namespace FreshTools
                 if (currentNetStat != lastNetworkStatus)
                 {
                     //status chaged
-                    LogSystem.Log("Network status changed",LogLevel.Warning, LOG_TAG);
+                    LogSystem.Log("Network status changed - now "+currentNetStat,LogLevel.Warning, LOG_TAG);
                 }
+                lastNetworkStatus = currentNetStat;
 
                 try
                 {
@@ -90,7 +91,7 @@ namespace FreshTools
         {
             if (IsTheInternetUp())
                 return NetworkStatus.AllGood;
-            else if (IsTheInternetUp())
+            else if (IsTheGatewayUp())
                 return NetworkStatus.NoInternet;
             else
                 return NetworkStatus.NoIntranet;
@@ -265,14 +266,9 @@ namespace FreshTools
             }
         }
 
-        public static PingReply PingInternet()
-        {
-            return Ping(InternetURL);
-        }
-
         public static bool IsTheInternetUp()
         {
-            return 0 <= Ping(InternetURL).RoundtripTime;
+            return Ping(InternetURL).Status == IPStatus.Success;
         }
 
         public static bool IsTheGatewayUp()
@@ -280,7 +276,7 @@ namespace FreshTools
             IPAddress gateway = GetDefaultGateway();
             if (gateway == null)
                 return false;
-            return 0 <= Ping(gateway + "", PingShortTimeout).RoundtripTime;
+            return Ping(gateway.ToString(), PingShortTimeout).Status == IPStatus.Success;
         }
 
         public static string FormatURL(string url)
@@ -355,7 +351,10 @@ namespace FreshTools
                 while (Running)
                 {
                     if (testPing)
-                        sitePings = NetworkMonitor.Ping(site)!=null;
+                    {
+                        PingReply pingReply = NetworkMonitor.Ping(site);
+                        sitePings = pingReply != null && pingReply.Status == IPStatus.Success;
+                    }
                     if(testWebPage)
                         sitePageReturns = NetworkMonitor.TestWebPage(site);
 
