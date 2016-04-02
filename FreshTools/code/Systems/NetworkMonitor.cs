@@ -9,7 +9,7 @@ using System.Windows.Forms;
 
 namespace FreshTools
 {
-    class NetworkMonitor
+    public class NetworkMonitor
     {
         protected const string LOG_TAG = "NetworkMonitor";
         
@@ -21,12 +21,14 @@ namespace FreshTools
         public static int PingTimeout = 1000;
         public static int PageTimeout = 1000;
         public static int PingShortTimeout = 50;
-        
-        private static Thread managerThread;
-        private static bool managerRunning = false;
-        private static int managerThreadInterval = 1000;
-        private static NetworkStatus lastNetworkStatus = NetworkStatus.NoIntranet;
 
+        public NotifyIcon NotifyIcon;
+        
+        private Thread managerThread;
+        private bool managerRunning = false;
+        private int managerThreadInterval = 1000;
+        private NetworkStatus lastNetworkStatus = NetworkStatus.NoIntranet;
+        
         private List<NetworkMonitorThread> monitorThreads;
 
         public NetworkMonitor()
@@ -36,7 +38,7 @@ namespace FreshTools
 
         public void AddMonitor(string site, bool testPing, bool testWebPage)
         {
-            monitorThreads.Add(new NetworkMonitorThread(site,testPing,testWebPage));
+            monitorThreads.Add(new NetworkMonitorThread(site,testPing,testWebPage, this));
         }
 
         public void StartMonitoring()
@@ -103,13 +105,13 @@ namespace FreshTools
             LogSystem.Log("NetworkMonitor.IsTheIntranetUp() - " + NetworkMonitor.IsTheGatewayUp());
             LogSystem.Log("NetworkMonitor.IsTheInternetUp() - " + NetworkMonitor.IsTheInternetUp());
 
-            NetworkMonitorThread t1 = new NetworkMonitorThread(NetworkMonitor.GetLocalIPAddress()+"", true, false);
-            NetworkMonitorThread t2 = new NetworkMonitorThread(NetworkMonitor.GetDefaultGateway() + "", true, false);
-            NetworkMonitorThread t3= new NetworkMonitorThread("www.google.com", true, true);
+            //NetworkMonitorThread t1 = new NetworkMonitorThread(NetworkMonitor.GetLocalIPAddress() + "", true, false, this);
+            //NetworkMonitorThread t2 = new NetworkMonitorThread(NetworkMonitor.GetDefaultGateway() + "", true, false, this);
+            //NetworkMonitorThread t3 = new NetworkMonitorThread("www.google.com", true, true, this);
 
-            t1.Start();
-            t2.Start();
-            t3.Start();
+            //t1.Start();
+            //t2.Start();
+            //t3.Start();
 
             /*
             Ping("1.2.3.4");
@@ -268,7 +270,10 @@ namespace FreshTools
 
         public static bool IsTheInternetUp()
         {
-            return Ping(InternetURL).Status == IPStatus.Success;
+            PingReply pr = Ping(InternetURL);
+            if (pr != null)
+                return pr.Status == IPStatus.Success;
+            else return false;
         }
 
         public static bool IsTheGatewayUp()
@@ -276,7 +281,10 @@ namespace FreshTools
             IPAddress gateway = GetDefaultGateway();
             if (gateway == null)
                 return false;
-            return Ping(gateway.ToString(), PingShortTimeout).Status == IPStatus.Success;
+            PingReply pr = Ping(gateway.ToString(), PingShortTimeout);
+            if (pr != null)
+                return pr.Status == IPStatus.Success;
+            else return false;
         }
 
         public static string FormatURL(string url)
@@ -325,6 +333,7 @@ namespace FreshTools
 
     public class NetworkMonitorThread
     {
+        private NetworkMonitor parent;
         private Thread testThread;
         private String site;
         private bool testPing;
@@ -337,8 +346,9 @@ namespace FreshTools
         public int TestInterval = 5000;
 
 
-        public NetworkMonitorThread(string site, bool testPing, bool testWebPage)
+        public NetworkMonitorThread(string site, bool testPing, bool testWebPage, NetworkMonitor parent)
         {
+            this.parent = parent;
             this.testPing = testPing;
             this.testWebPage = testWebPage;
             this.site = site;
@@ -391,12 +401,14 @@ namespace FreshTools
         private void ReportPingStatusChange(bool upNow)
         {
             //stub
+            parent.NotifyIcon.ShowBalloonTip(2000, "Fresh Network Monitor", "Ping(" + site + ") is " + (upNow ? "up" : "down"), upNow ? ToolTipIcon.None : ToolTipIcon.Warning);
             LogSystem.Log(site + " ping now = " + upNow);
         }
 
         private void ReportPageStatusChange(bool upNow)
         {
             //stub
+            parent.NotifyIcon.ShowBalloonTip(2000, "Fresh Network Monitor", "Page(" + site + ") is " + (upNow ? "up" : "down"), upNow ? ToolTipIcon.None : ToolTipIcon.Warning);
             LogSystem.Log(site + " page up now = " + upNow);
         }
 
