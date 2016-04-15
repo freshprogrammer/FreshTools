@@ -38,7 +38,7 @@ namespace FreshTools
 
         public void AddMonitor(string site, bool testPing, bool testWebPage)
         {
-            monitorThreads.Add(new NetworkMonitorThread(site,testPing,testWebPage, this));
+            monitorThreads.Add(new NetworkMonitorThread(site, testPing, testWebPage));
         }
 
         public void StartMonitoring()
@@ -333,26 +333,39 @@ namespace FreshTools
 
     public class NetworkMonitorThread
     {
-        private NetworkMonitor parent;
         private Thread testThread;
         private String site;
         private bool testPing;
         private bool testWebPage;
+
+        //These dont fully switch over untill the minimum limits are reached
         private bool sitePings = false;
         private bool sitePageReturns = false;
-        private bool reportNextRun = true;//true to report first run
+        private DateTime lastPingDownTime;
+        private DateTime lastPageDownTime;
+        private TimeSpan lastTotalPageUpTimeSpan;
+        private TimeSpan lastTotalPingUpTimeSpan;
+        private TimeSpan lastTotalPageDownTimeSpan;
+        private TimeSpan lastTotalPingDownTimeSpan;
 
         public bool Running;
         public int TestInterval = 5000;
+        public int AcceptableDownTime = 10 * 1000;
+        public int MinimumUpTime = 0;
 
 
-        public NetworkMonitorThread(string site, bool testPing, bool testWebPage, NetworkMonitor parent)
+        public NetworkMonitorThread(string site, bool testPing, bool testWebPage)
         {
-            this.parent = parent;
             this.testPing = testPing;
             this.testWebPage = testWebPage;
             this.site = site;
             Running = false;
+            lastPingDownTime = DateTime.Now;
+            lastPageDownTime = DateTime.Now;
+            lastTotalPageUpTimeSpan = TimeSpan.Zero;
+            lastTotalPingUpTimeSpan = TimeSpan.Zero;
+            lastTotalPageDownTimeSpan = TimeSpan.Zero;
+            lastTotalPingDownTimeSpan = TimeSpan.Zero;
         }
 
         public void Run()
@@ -365,24 +378,41 @@ namespace FreshTools
                     {
                         PingReply pingReply = NetworkMonitor.Ping(site);
                         bool sitePingsNow = pingReply != null && pingReply.Status == IPStatus.Success;
-                        if (reportNextRun || sitePingsNow != sitePings)
+                        if (sitePingsNow != sitePings)
                         {
                             //status changed - report it
                             sitePings = sitePingsNow;
                             ReportPingStatusChange(sitePageReturns);
                         }
+                        if(sitePings)
+                            lastPingDownTime = DateTime.Now;
                     }
                     if (testWebPage)
                     {
+                        //////////////////////////////////////////All this code is prototyped - nothign tested
                         bool sitePageReturnsNow = NetworkMonitor.TestWebPage(site);
-                        if (reportNextRun || sitePageReturnsNow != sitePageReturns)
+                        if (sitePageReturnsNow)
                         {
-                            //status changed - report it
-                            sitePageReturns = sitePageReturnsNow;
-                            ReportPageStatusChange(sitePageReturns);
+                            TimeSpan upTime = DateTime.Now - lastPageDownTime;
+                            if (sitePageReturnsNow != sitePageReturns && upTime.TotalMilliseconds > MinimumUpTime)
+                            {//log site page returns now
+                                sitePageReturns = sitePageReturnsNow;
+                                lastTotalPageDownTimeSpan = DateTime.Now - lastPageDownTime;
+                                lastPageDownTime = DateTime.Now;
+                                ReportPageStatusChange(true);
+                            }
                         }
+                        else
+                        {
+                            TimeSpan downTime = DateTime.Now - lastPageDownTime;
+                            if (downTime.TotalMilliseconds >= AcceptableDownTime)
+                            {
+                                ReportPageStatusChange(false);
+                            }
+                        }
+
+                        ///end test
                     }
-                    reportNextRun = false;
 
                     //LogSystem.Log("("+sitePings+","+sitePageReturns+") from "+site);
                     Thread.Sleep(TestInterval);
@@ -400,16 +430,12 @@ namespace FreshTools
 
         private void ReportPingStatusChange(bool upNow)
         {
-            //stub
-            parent.NotifyIcon.ShowBalloonTip(2000, "Fresh Network Monitor", "Ping(" + site + ") is " + (upNow ? "up" : "down"), upNow ? ToolTipIcon.None : ToolTipIcon.Warning);
-            LogSystem.Log(site + " ping now = " + upNow);
+            LogSystem.Log(site + " ping now = " + upNow,LogLevel.Verbose);
         }
 
         private void ReportPageStatusChange(bool upNow)
         {
-            //stub
-            parent.NotifyIcon.ShowBalloonTip(2000, "Fresh Network Monitor", "Page(" + site + ") is " + (upNow ? "up" : "down"), upNow ? ToolTipIcon.None : ToolTipIcon.Warning);
-            LogSystem.Log(site + " page up now = " + upNow);
+            LogSystem.Log(site + " page up now = " + upNow, LogLevel.Verbose);
         }
 
         public void Start()
