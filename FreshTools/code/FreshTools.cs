@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace FreshTools
 {
@@ -92,9 +93,24 @@ namespace FreshTools
         [STAThread]
         static void Main(string[] args)
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FreshTools());
+            string mutex_id = "FreshTools";
+            bool createdNew = true;
+            using (Mutex mutex = new Mutex(true, mutex_id, out createdNew))
+            {
+                if (!createdNew)
+                {
+                    Process thisProccess = Process.GetCurrentProcess();
+                    foreach (var process in Process.GetProcessesByName(thisProccess.ProcessName))
+                    {
+                        if (process.Id != thisProccess.Id)
+                            process.Kill();
+                    }
+                    //MessageBox.Show("Killed old process and started new!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                }
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new FreshTools());
+            }
         }
 
         public void LoadConfig()
