@@ -13,6 +13,17 @@ namespace FreshTools
     /// </summary>
     public static class WindowManager
     {
+        private const int SWP_NOSIZE = 0x0001;
+        private const int SWP_NOMOVE = 0x0002;
+        private const int SWP_NOZORDER = 0x0004;
+        private const int SWP_NOACTIVATE = 0x0010;
+        private const int SWP_SHOWWINDOW = 0x0040;
+
+        private const short HWND_BOTTOM = 1;
+        private const short HWND_NOTOPMOST = -2;
+        private const short HWND_TOP = 0;
+        private const short HWND_TOPMOST = -1;
+        
         const float ComparisonRoundingLimit = 0.001f;//this will be to be broader for lower resolutions since they have less pixes to round to
 
         //public ajustable settings
@@ -65,6 +76,7 @@ namespace FreshTools
                 hotKeysEnabled = true;
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A, MoveActiveWindowToLeftScreen);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S, MoveActiveWindowToRightScreen);
+
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1, MoveActiveWindowToBottomLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2, MoveActiveWindowToBottom);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3, MoveActiveWindowToBottomRight);
@@ -73,6 +85,8 @@ namespace FreshTools
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7, MoveActiveWindowToTopLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8, MoveActiveWindowToTop);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9, MoveActiveWindowToTopRight);
+
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W, SendActiveWindowToBack);
             }
         }
 
@@ -83,6 +97,7 @@ namespace FreshTools
                 hotKeysEnabled = false;
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
+
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3);
@@ -91,6 +106,8 @@ namespace FreshTools
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
+
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W);
             }
         }
         #endregion
@@ -226,11 +243,6 @@ namespace FreshTools
         #region Window movement & snap logic
         public static void MoveActiveWindowTo(int x, int y, bool includePosOffset = true)
         {
-            const short SWP_NOSIZE = 1;
-            //const short SWP_NOMOVE = 0X2;
-            const short SWP_NOZORDER = 0X4;
-            const int SWP_SHOWWINDOW = 0x0040;
-
             const int cx = 0;
             const int cy = 0;
 
@@ -243,18 +255,13 @@ namespace FreshTools
                     y += positionOffset.Y;
                 }
 
-                SetWindowPos(handle, 0, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                SetWindowPos(handle, HWND_TOP, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
             }
         }
 
         //if moving window on same screen you need to offset its pos. If moving window between screens the x,y pos should already be know and not need to be re-offset
         private static void MoveActiveWindowTo(int x, int y, int newWidth, int newHeight, bool includePosOffset=true)
         {
-            const short SWP_NOSIZE = 0;
-            //const short SWP_NOMOVE = 0X2;
-            const short SWP_NOZORDER = 0X4;
-            const int SWP_SHOWWINDOW = 0x0040;
-
             IntPtr handle = GetForegroundWindow();
             if (handle != IntPtr.Zero)
             {
@@ -267,7 +274,16 @@ namespace FreshTools
                     newHeight += resizeOffset.Y;
                 }
 
-                SetWindowPos(handle, 0, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                SetWindowPos(handle, HWND_TOP, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_SHOWWINDOW);
+            }
+        }
+
+        private static void SendActiveWindowToBack()
+        {
+            IntPtr handle = GetForegroundWindow();
+            if (handle != IntPtr.Zero)
+            {
+                SetWindowPos(handle, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
             }
         }
 
@@ -577,6 +593,11 @@ namespace FreshTools
             });
         }
         #endregion
+
+        public static void SendActiveWindowToBack(object sender = null, HotKeyEventArgs e = null)
+        {
+            SendActiveWindowToBack();
+        }
 
         #region Save & Restore all window positions
         public static void SaveAllWindowPositions(object sender = null, EventArgs e = null)
