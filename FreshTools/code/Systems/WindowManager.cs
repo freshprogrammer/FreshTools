@@ -47,6 +47,12 @@ namespace FreshTools
         private static Point positionOffset = new Point(-7, 0);
         private static Point resizeOffset = new Point(14, 7);
 
+        //alpha control variables
+        private static IntPtr lastWindowAlphaHandle = IntPtr.Zero;
+        private static byte lastWindowAlpha = 0;
+        private const byte WindowAlphaIncrement = 32;
+        private const byte MinWindowAlpha = 32;
+
         #region Setup and teardown
         static WindowManager()
         {
@@ -88,8 +94,8 @@ namespace FreshTools
 
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W, SendActiveWindowToBack);
 
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Add, IncreaseWindowTranspancy);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract, DecreaseWindowTranspancy);
+                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add, IncreaseWindowTranspancy);
+                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract, DecreaseWindowTranspancy);
             }
         }
 
@@ -112,8 +118,8 @@ namespace FreshTools
 
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W);
 
-                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Add);
-                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract);
             }
         }
         #endregion
@@ -160,6 +166,15 @@ namespace FreshTools
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+
+        [DllImport("user32.dll")]
+        static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern UInt32 GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        static extern int SetWindowLong(IntPtr hWnd, int nIndex, UInt32 dwNewLong);
         #endregion
 
         #region Move Window Between screens
@@ -284,50 +299,45 @@ namespace FreshTools
             }
         }
 
-        [DllImport("user32.dll")]
-        static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
-
-        [DllImport("user32.dll", SetLastError = true)]
-        static extern UInt32 GetWindowLong(IntPtr hWnd, int nIndex);
-
-        [DllImport("user32.dll")]
-        static extern int SetWindowLong(IntPtr hWnd, int nIndex, UInt32 dwNewLong);
-
         public const int GWL_EXSTYLE = -20;
         public const int WS_EX_LAYERED = 0x80000;
         public const int LWA_ALPHA = 0x2;
         public const int LWA_COLORKEY = 0x1;
 
-        private static IntPtr lastWindowHandle = IntPtr.Zero;
-        private static byte lastAlpha = 0;
-        private const byte AlphaIncrement = 16;
-
         private static void SetWindowTransparancy(int d)
         {
-            LogSystem.Log("START", LogLevel.Information);
-            byte a = 255;
-            if (d < 0)
-                a = 128;
-
+            byte a;
             IntPtr handle = GetForegroundWindow();
-            LogSystem.Log("h " + handle, LogLevel.Information);
-            LogSystem.Log("lh " + lastWindowHandle, LogLevel.Information);
-            LogSystem.Log("h == lh  - " + (handle == lastWindowHandle), LogLevel.Information);
 
-            if (lastWindowHandle == handle)
-            {
+            if (lastWindowAlphaHandle == handle)
+            {//new change to last window
                 if (d < 0)
-                    a = (byte)(lastAlpha - AlphaIncrement);
+                {
+                    a = (byte)(lastWindowAlpha - WindowAlphaIncrement);
+                    if (a > lastWindowAlpha) a = 0;//set to 0 and dont wrap
+                }
                 else
-                    a = (byte)(lastAlpha + AlphaIncrement);
+                {
+                    a = (byte)(lastWindowAlpha + WindowAlphaIncrement);
+                    if (a < lastWindowAlpha) a = 255;//set to 255 and dont wrap
+                }
             }
-            LogSystem.Log("set alpha " + a + " on " + handle, LogLevel.Information);
+            else
+            {//new window
+                if (d < 0) a = 255 - WindowAlphaIncrement;
+                else a = 255;
 
-            SetWindowLong(handle, GWL_EXSTYLE, GetWindowLong(handle, GWL_EXSTYLE) ^ WS_EX_LAYERED);
+            }
+            if (a < MinWindowAlpha) a = MinWindowAlpha;
+            LogSystem.Log("set alpha " + a + " on " + handle, LogLevel.Information);
+            
+            uint windowLong = GetWindowLong(handle, GWL_EXSTYLE);
+            if(!(windowLong.ToString("X").Length==5 && windowLong.ToString("X")[0]=='8'))
+                SetWindowLong(handle, GWL_EXSTYLE, windowLong ^ WS_EX_LAYERED);
             SetLayeredWindowAttributes(handle, 0xff0000, a, LWA_ALPHA);
 
-            lastAlpha = a;
-            lastWindowHandle = handle;
+            lastWindowAlpha = a;
+            lastWindowAlphaHandle = handle;
         }
 
         private static void SendActiveWindowToBack()
