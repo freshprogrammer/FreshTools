@@ -87,6 +87,9 @@ namespace FreshTools
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9, MoveActiveWindowToTopRight);
 
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W, SendActiveWindowToBack);
+
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Add, IncreaseWindowTranspancy);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract, DecreaseWindowTranspancy);
             }
         }
 
@@ -108,6 +111,9 @@ namespace FreshTools
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
 
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W);
+
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Add);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract);
             }
         }
         #endregion
@@ -276,6 +282,52 @@ namespace FreshTools
 
                 SetWindowPos(handle, HWND_TOP, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_SHOWWINDOW);
             }
+        }
+
+        [DllImport("user32.dll")]
+        static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern UInt32 GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        static extern int SetWindowLong(IntPtr hWnd, int nIndex, UInt32 dwNewLong);
+
+        public const int GWL_EXSTYLE = -20;
+        public const int WS_EX_LAYERED = 0x80000;
+        public const int LWA_ALPHA = 0x2;
+        public const int LWA_COLORKEY = 0x1;
+
+        private static IntPtr lastWindowHandle = IntPtr.Zero;
+        private static byte lastAlpha = 0;
+        private const byte AlphaIncrement = 16;
+
+        private static void SetWindowTransparancy(int d)
+        {
+            LogSystem.Log("START", LogLevel.Information);
+            byte a = 255;
+            if (d < 0)
+                a = 128;
+
+            IntPtr handle = GetForegroundWindow();
+            LogSystem.Log("h " + handle, LogLevel.Information);
+            LogSystem.Log("lh " + lastWindowHandle, LogLevel.Information);
+            LogSystem.Log("h == lh  - " + (handle == lastWindowHandle), LogLevel.Information);
+
+            if (lastWindowHandle == handle)
+            {
+                if (d < 0)
+                    a = (byte)(lastAlpha - AlphaIncrement);
+                else
+                    a = (byte)(lastAlpha + AlphaIncrement);
+            }
+            LogSystem.Log("set alpha " + a + " on " + handle, LogLevel.Information);
+
+            SetWindowLong(handle, GWL_EXSTYLE, GetWindowLong(handle, GWL_EXSTYLE) ^ WS_EX_LAYERED);
+            SetLayeredWindowAttributes(handle, 0xff0000, a, LWA_ALPHA);
+
+            lastAlpha = a;
+            lastWindowHandle = handle;
         }
 
         private static void SendActiveWindowToBack()
@@ -597,6 +649,16 @@ namespace FreshTools
         public static void SendActiveWindowToBack(object sender = null, HotKeyEventArgs e = null)
         {
             SendActiveWindowToBack();
+        }
+
+        public static void IncreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
+        {
+            SetWindowTransparancy(1);
+        }
+
+        public static void DecreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
+        {
+            SetWindowTransparancy(-1);
         }
 
         #region Save & Restore all window positions
