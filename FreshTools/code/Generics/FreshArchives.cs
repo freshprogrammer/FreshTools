@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Win32;
 
 namespace FreshTools
 {
@@ -15,6 +16,13 @@ namespace FreshTools
             if (ver.Build != 0) return ver.ToString(3);
             if (ver.Minor != 0) return ver.ToString(2);
             else return ver.ToString(1);
+        }
+
+        public static bool IsWindows10()
+        {
+            var reg = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+            string productName = (string)reg.GetValue("ProductName");
+            return productName.StartsWith("Windows 10");
         }
     }
 }

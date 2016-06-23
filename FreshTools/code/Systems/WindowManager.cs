@@ -46,6 +46,12 @@ namespace FreshTools
         #region Setup and teardown
         static WindowManager()
         {
+            if (!FreshArchives.IsWindows10())
+            {
+                positionOffset = new Point(0, 0);
+                resizeOffset = new Point(0, 0);
+            }
+
             //every set of sizes that uses a third should also use the round up to ensure they utilize all of the screen
             float oneThird = 1f/3f;
             float oneThirdRoundUp = 1 - 2 * oneThird;//catch rounding error for last third
@@ -89,10 +95,10 @@ namespace FreshTools
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8, MoveActiveWindowToTop);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9, MoveActiveWindowToTopRight);
 
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W, SendActiveWindowToBack);
-
                 HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add, IncreaseWindowTranspancy);
                 HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract, DecreaseWindowTranspancy);
+
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W, SendActiveWindowToBack);
             }
         }
 
@@ -114,10 +120,10 @@ namespace FreshTools
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
 
-                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W);
-
                 HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract);
+
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W);
             }
         }
         #endregion
@@ -339,7 +345,7 @@ namespace FreshTools
                 else a = 255;
             }
             if (a < MinWindowAlpha) a = MinWindowAlpha;
-            LogSystem.Log("set alpha " + a + " on " + handle, LogLevel.Information);
+            //LogSystem.Log("set alpha " + a + " on " + handle, LogLevel.Information);
 
             //Enable extended layered style on window if not enabled
             uint windowLong = GetWindowLong(handle, GWL_EXSTYLE);
