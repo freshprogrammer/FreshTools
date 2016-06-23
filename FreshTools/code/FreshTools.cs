@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace FreshTools
 {
@@ -56,8 +57,15 @@ namespace FreshTools
             startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
             stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
 
-            MenuItem windowHotKeysEnabledManagerMenuItem = new MenuItem("Window Control Hot Keys");
-            windowHotKeysEnabledManagerMenuItem.Checked = WindowManager.HotKeysEnabled;
+            MenuItem windowManagerHotKeysEnabledMenuItem = new MenuItem("Window Control Hot Keys");
+            windowManagerHotKeysEnabledMenuItem.Checked = WindowManager.HotKeysEnabled;
+
+            MenuItem windowManagerSaveWindowsMenuItem = new MenuItem("Save All Window Positions");
+            MenuItem windowManagerRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions");
+            MenuItem windowManagerUndoRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions (undo)");
+
+            MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows");
+            startupEnabledMenuItem.Checked = FreshArchives.IsApplicationInStartup();
 
             MenuItem quitMenuItem = new MenuItem("Quit");
 
@@ -65,14 +73,22 @@ namespace FreshTools
             contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(breakMenuItem);
             contextMenu.MenuItems.Add(startIdlePreventionMenuItem);
-            contextMenu.MenuItems.Add(windowHotKeysEnabledManagerMenuItem);
+            contextMenu.MenuItems.Add(windowManagerHotKeysEnabledMenuItem);
+            contextMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
+            contextMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
+            contextMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
+            contextMenu.MenuItems.Add(startupEnabledMenuItem);
             contextMenu.MenuItems.Add(quitMenuItem);
             freshToolsNotifyIcon.ContextMenu = contextMenu;
 
             // Wire up menu items
             startIdlePreventionMenuItem.Click += startIdlePreventionMenuItem_Click;
             stopIdlePreventionMenuItem.Click += stopIdlePreventionMenuItem_Click;
-            windowHotKeysEnabledManagerMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
+            windowManagerHotKeysEnabledMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
+            windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
+            windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
+            windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
+            startupEnabledMenuItem.Click += startupEnabledMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
         }
 
@@ -82,9 +98,24 @@ namespace FreshTools
         [STAThread]
         static void Main(string[] args)
         {
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new FreshTools());
+            string mutex_id = "FreshTools";
+            bool createdNew = true;
+            using (Mutex mutex = new Mutex(true, mutex_id, out createdNew))
+            {
+                if (!createdNew)
+                {
+                    Process thisProccess = Process.GetCurrentProcess();
+                    foreach (var process in Process.GetProcessesByName(thisProccess.ProcessName))
+                    {
+                        if (process.Id != thisProccess.Id)
+                            process.Kill();
+                    }
+                    //MessageBox.Show("Killed old process and started new!", "Error", MessageBoxButtons.OK, MessageBoxIcon.Hand);
+                }
+                Application.EnableVisualStyles();
+                Application.SetCompatibleTextRenderingDefault(false);
+                Application.Run(new FreshTools());
+            }
         }
 
         public void LoadConfig()
@@ -146,6 +177,16 @@ namespace FreshTools
             WindowManager.HotKeysEnabled = i.Checked;
         }
 
+        private void startupEnabledMenuItem_Click(object sender, EventArgs e)
+        {
+            MenuItem i = (MenuItem)sender;
+            if (FreshArchives.IsApplicationInStartup())
+                FreshArchives.RemoveApplicationFromStartup();
+            else
+                FreshArchives.AddApplicationToStartup();
+            i.Checked = FreshArchives.IsApplicationInStartup();
+        }
+
         /// <summary>
         /// Close the application on click of 'quit' button on context menu
         /// </summary>
@@ -171,21 +212,31 @@ namespace FreshTools
             //register hotkey(s)
             //GenericsClass.LogSystem("Registering Hotkeys");
             HotKeyManager.GenericHotKeyPressedHandler += new EventHandler<HotKeyEventArgs>(GenericHotKeyPressed);
-            HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.Oemtilde);
+            //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.C);
+            //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.X);
+            //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.Z);
         }
 
         private static void GenericHotKeyPressed(object sender, HotKeyEventArgs args)
         {
             try
             {
-                if (args.Modifiers == (KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift) && args.Key == Keys.Oemtilde)
+                if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.C)
                 {
-                    LogSystem.Log("FreshTools.HotKeyPressed() - Super Tilde - " + args.Modifiers + "+" + args.Key + "");
+                    //WindowManager.SaveAllWindowPositions();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.X)
+                {
+                    //WindowManager.RestoreAllWindowPositions();
+                }
+                else if (args.Modifiers == (KeyModifiers.Control | KeyModifiers.Shift) && args.Key == Keys.Z)
+                {
+                    //WindowManager.UndoRestoreAllWindowPositions();
                 }
                 else //unknown hot key pressed
                 {
                     //uncaught hotkey
-                    LogSystem.Log("FreshTools.HotKeyPressed() - UnActioned - " + args.Modifiers + "+" + args.Key + "");
+                    LogSystem.Log("UnActioned - " + args.Modifiers + "+" + args.Key + "");
                 }
             }
             catch (Exception e)

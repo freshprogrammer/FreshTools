@@ -25,7 +25,7 @@ namespace FreshTools
 
         public IdleMonitor()
         {
-
+    
         }
 
         /// <summary>
