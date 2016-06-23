@@ -31,6 +31,7 @@ namespace FreshTools
         private static List<RectangleF> cornerSizes;
         private static List<RectangleF> topSizes;
         private static List<RectangleF> sideSizes;
+        private static List<RectangleF> centerSizes;
 
         //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
         private static Point positionOffset = new Point(-7, 0);
@@ -62,6 +63,12 @@ namespace FreshTools
             topSizes = new List<RectangleF>(2);
             topSizes.Add(new RectangleF(0, 0, 1, 0.5f));
             topSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 0.5f));
+
+            centerSizes = new List<RectangleF>(2);
+            centerSizes.Add(new RectangleF(0, 0, 1, 1));
+            centerSizes.Add(new RectangleF(oneThird / 2, 0, oneThirdRoundUp * 2, 1));//2/3 center full height with 1/6 open edges
+            centerSizes.Add(new RectangleF(0.25f, 0, 0.5f, 1));//1/2 center full height with 1/4 open edges
+            centerSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 1));
         }
 
         private static void EnableHotKeys()
@@ -76,6 +83,7 @@ namespace FreshTools
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2, MoveActiveWindowToBottom);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3, MoveActiveWindowToBottomRight);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad4, MoveActiveWindowToLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad5, MoveActiveWindowToCenter);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad6, MoveActiveWindowToRight);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7, MoveActiveWindowToTopLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8, MoveActiveWindowToTop);
@@ -100,6 +108,7 @@ namespace FreshTools
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad4);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad5);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad6);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8);
@@ -268,7 +277,7 @@ namespace FreshTools
         }
 #endregion
 
-        #region Window movement & snap logic
+        #region Window movement & snap (control) logic
         public static void MoveActiveWindowTo(int x, int y, bool includePosOffset = true)
         {
             const int cx = 0;
@@ -377,6 +386,10 @@ namespace FreshTools
                     snapAreas = new RectangleF[sideSizes.Count];
                     sideSizes.CopyTo(snapAreas);
                     break;
+                case SnapDirection.Center:
+                    snapAreas = new RectangleF[centerSizes.Count];
+                    centerSizes.CopyTo(snapAreas);
+                    break;
             }
 
             //offset snap areas X
@@ -387,6 +400,7 @@ namespace FreshTools
                 case SnapDirection.Left:
                 case SnapDirection.Bottom:
                 case SnapDirection.BottomLeft:
+                case SnapDirection.Center:
                     break;//do nothing
                 case SnapDirection.BottomRight:
                 case SnapDirection.TopRight:
@@ -406,6 +420,7 @@ namespace FreshTools
                 case SnapDirection.Right:
                 case SnapDirection.TopLeft:
                 case SnapDirection.TopRight:
+                case SnapDirection.Center:
                     break;//do nothing
                 case SnapDirection.BottomRight:
                 case SnapDirection.Bottom:
@@ -451,6 +466,11 @@ namespace FreshTools
         public static void MoveActiveWindowToLeft(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Left);
+        }
+
+        public static void MoveActiveWindowToCenter(object o, HotKeyEventArgs args)
+        {
+            SnapActiveWindow(SnapDirection.Center);
         }
 
         public static void MoveActiveWindowToRight(object o, HotKeyEventArgs args)
@@ -772,6 +792,7 @@ namespace FreshTools
             TopRight,
             BottomLeft,
             BottomRight,
+            Center,
         }
     }
 }
