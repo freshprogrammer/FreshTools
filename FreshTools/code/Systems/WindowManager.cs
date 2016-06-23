@@ -348,9 +348,7 @@ namespace FreshTools
             //LogSystem.Log("set alpha " + a + " on " + handle, LogLevel.Information);
 
             //Enable extended layered style on window if not enabled
-            uint windowLong = GetWindowLong(handle, GWL_EXSTYLE);
-            if(!(windowLong.ToString("X").Length==5 && windowLong.ToString("X")[0]=='8'))
-                SetWindowLong(handle, GWL_EXSTYLE, windowLong ^ WS_EX_LAYERED);
+            SetWindowLong(handle, GWL_EXSTYLE, GetWindowLong(handle, GWL_EXSTYLE) | WS_EX_LAYERED);
             //set window transparency
             SetLayeredWindowAttributes(handle, 0, a, LWA_ALPHA);
 
