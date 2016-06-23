@@ -12,19 +12,8 @@ namespace FreshTools
     /// Created as a Windows 10 replacement for the discontinued winsplit revolution
     /// </summary>
     public static class WindowManager
-    {
-        private const int SWP_NOSIZE = 0x0001;
-        private const int SWP_NOMOVE = 0x0002;
-        private const int SWP_NOZORDER = 0x0004;
-        private const int SWP_NOACTIVATE = 0x0010;
-        private const int SWP_SHOWWINDOW = 0x0040;
-
-        private const short HWND_BOTTOM = 1;
-        private const short HWND_NOTOPMOST = -2;
-        private const short HWND_TOP = 0;
-        private const short HWND_TOPMOST = -1;
-        
-        const float ComparisonRoundingLimit = 0.001f;//this will be to be broader for lower resolutions since they have less pixes to round to
+    {   
+        private const float ComparisonRoundingLimit = 0.001f;//this will need to be broader for lower resolutions since they have less pixes to round to
 
         //public ajustable settings
         public static bool WrapLeftRightScreens = true;
@@ -149,6 +138,17 @@ namespace FreshTools
             }
         }
 
+        //SetWindowPos flags
+        private const int SWP_NOSIZE = 0x0001;
+        private const int SWP_NOMOVE = 0x0002;
+        private const int SWP_NOZORDER = 0x0004;
+        private const int SWP_NOACTIVATE = 0x0010;
+        private const int SWP_SHOWWINDOW = 0x0040;
+        //SetWindowPos zlayer flags 
+        private const short HWND_BOTTOM = 1;
+        private const short HWND_NOTOPMOST = -2;
+        private const short HWND_TOP = 0;
+        private const short HWND_TOPMOST = -1;
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
         public static extern bool SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
 
@@ -167,12 +167,19 @@ namespace FreshTools
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
 
+        //SetLayeredWindowAttributes - layered window attributes
+        public const int LWA_COLORKEY = 0x1;
+        public const int LWA_ALPHA = 0x2;
         [DllImport("user32.dll")]
         static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
 
+        //GetWindowStyle - get extended window styles
+        public const int GWL_EXSTYLE = -20;
         [DllImport("user32.dll", SetLastError = true)]
         static extern UInt32 GetWindowLong(IntPtr hWnd, int nIndex);
 
+        //extended window styles - layered
+        public const int WS_EX_LAYERED = 0x80000;
         [DllImport("user32.dll")]
         static extern int SetWindowLong(IntPtr hWnd, int nIndex, UInt32 dwNewLong);
         #endregion
@@ -299,11 +306,6 @@ namespace FreshTools
             }
         }
 
-        public const int GWL_EXSTYLE = -20;
-        public const int WS_EX_LAYERED = 0x80000;
-        public const int LWA_ALPHA = 0x2;
-        public const int LWA_COLORKEY = 0x1;
-
         private static void SetWindowTransparancy(int d)
         {
             byte a;
@@ -326,15 +328,16 @@ namespace FreshTools
             {//new window
                 if (d < 0) a = 255 - WindowAlphaIncrement;
                 else a = 255;
-
             }
             if (a < MinWindowAlpha) a = MinWindowAlpha;
             LogSystem.Log("set alpha " + a + " on " + handle, LogLevel.Information);
-            
+
+            //Enable extended layered style on window if not enabled
             uint windowLong = GetWindowLong(handle, GWL_EXSTYLE);
             if(!(windowLong.ToString("X").Length==5 && windowLong.ToString("X")[0]=='8'))
                 SetWindowLong(handle, GWL_EXSTYLE, windowLong ^ WS_EX_LAYERED);
-            SetLayeredWindowAttributes(handle, 0xff0000, a, LWA_ALPHA);
+            //set window transparency
+            SetLayeredWindowAttributes(handle, 0, a, LWA_ALPHA);
 
             lastWindowAlpha = a;
             lastWindowAlphaHandle = handle;
@@ -433,6 +436,7 @@ namespace FreshTools
         }
         #endregion
 
+        #region HotKey Functions
         #region Snap active window screen to all 8 directions
         public static void MoveActiveWindowToTop(object o, HotKeyEventArgs args)
         {
@@ -472,6 +476,22 @@ namespace FreshTools
         public static void MoveActiveWindowToBottomRight(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.BottomRight);
+        }
+        #endregion
+
+        public static void SendActiveWindowToBack(object sender = null, HotKeyEventArgs e = null)
+        {
+            SendActiveWindowToBack();
+        }
+
+        public static void IncreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
+        {
+            SetWindowTransparancy(1);
+        }
+
+        public static void DecreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
+        {
+            SetWindowTransparancy(-1);
         }
         #endregion
 
@@ -655,21 +675,6 @@ namespace FreshTools
             });
         }
         #endregion
-
-        public static void SendActiveWindowToBack(object sender = null, HotKeyEventArgs e = null)
-        {
-            SendActiveWindowToBack();
-        }
-
-        public static void IncreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
-        {
-            SetWindowTransparancy(1);
-        }
-
-        public static void DecreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
-        {
-            SetWindowTransparancy(-1);
-        }
 
         #region Save & Restore all window positions
         public static void SaveAllWindowPositions(object sender = null, EventArgs e = null)
