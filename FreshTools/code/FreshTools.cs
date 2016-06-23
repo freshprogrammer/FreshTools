@@ -64,6 +64,9 @@ namespace FreshTools
             MenuItem windowManagerRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions");
             MenuItem windowManagerUndoRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions (undo)");
 
+            MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows");
+            startupEnabledMenuItem.Checked = FreshArchives.IsApplicationInStartup();
+
             MenuItem quitMenuItem = new MenuItem("Quit");
 
             ContextMenu contextMenu = new ContextMenu();
@@ -74,6 +77,7 @@ namespace FreshTools
             contextMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
             contextMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
             contextMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
+            contextMenu.MenuItems.Add(startupEnabledMenuItem);
             contextMenu.MenuItems.Add(quitMenuItem);
             freshToolsNotifyIcon.ContextMenu = contextMenu;
 
@@ -84,6 +88,7 @@ namespace FreshTools
             windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
             windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
             windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
+            startupEnabledMenuItem.Click += startupEnabledMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
         }
 
@@ -170,6 +175,16 @@ namespace FreshTools
             MenuItem i = (MenuItem)sender;
             i.Checked = !i.Checked;
             WindowManager.HotKeysEnabled = i.Checked;
+        }
+
+        private void startupEnabledMenuItem_Click(object sender, EventArgs e)
+        {
+            MenuItem i = (MenuItem)sender;
+            if (FreshArchives.IsApplicationInStartup())
+                FreshArchives.RemoveApplicationFromStartup();
+            else
+                FreshArchives.AddApplicationToStartup();
+            i.Checked = FreshArchives.IsApplicationInStartup();
         }
 
         /// <summary>
