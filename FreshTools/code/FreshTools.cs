@@ -12,15 +12,10 @@ namespace FreshTools
         //Notification Icon
         private Icon freshToolsIcon;
         private NotifyIcon freshToolsNotifyIcon;
-        private MenuItem startIdlePreventionMenuItem;
-        private MenuItem stopIdlePreventionMenuItem;
 
         //Settings
         private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
         private VariablesFile settingsFile;
-
-        //Tools
-        private IdleMonitor idleMonitor;
 
         public FreshTools()
         {
@@ -52,10 +47,6 @@ namespace FreshTools
 
             // Create all context menu items and add them to notification tray icon
             MenuItem titleMenuItem = new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version));
-            MenuItem breakMenuItem = new MenuItem("-");
-
-            startIdlePreventionMenuItem = new MenuItem("Start Idle Prevention");
-            stopIdlePreventionMenuItem = new MenuItem("Stop Idle Prevention");
 
             MenuItem windowManagerHotKeysEnabledMenuItem = new MenuItem("Window Control Hot Keys");
             windowManagerHotKeysEnabledMenuItem.Checked = WindowManager.HotKeysEnabled;
@@ -71,19 +62,17 @@ namespace FreshTools
 
             ContextMenu contextMenu = new ContextMenu();
             contextMenu.MenuItems.Add(titleMenuItem);
-            contextMenu.MenuItems.Add(breakMenuItem);
-            contextMenu.MenuItems.Add(startIdlePreventionMenuItem);
+            contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(windowManagerHotKeysEnabledMenuItem);
             contextMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
             contextMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
             contextMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
             contextMenu.MenuItems.Add(startupEnabledMenuItem);
+            contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(quitMenuItem);
             freshToolsNotifyIcon.ContextMenu = contextMenu;
 
             // Wire up menu items
-            startIdlePreventionMenuItem.Click += startIdlePreventionMenuItem_Click;
-            stopIdlePreventionMenuItem.Click += stopIdlePreventionMenuItem_Click;
             windowManagerHotKeysEnabledMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
             windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
             windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
@@ -143,33 +132,6 @@ namespace FreshTools
         }
 
         #region Context Menu Event Handlers
-        private void startIdlePreventionMenuItem_Click(object sender, EventArgs e)
-        {
-            if(idleMonitor==null)
-            {
-                idleMonitor = new IdleMonitor();
-            }
-            idleMonitor.StartIdleProtection();
-            idleMonitor.NotifyIcon = freshToolsNotifyIcon;
-            idleMonitor.BalloonOnIdlePrevention = false;
-
-            int index = freshToolsNotifyIcon.ContextMenu.MenuItems.IndexOf(startIdlePreventionMenuItem);
-            freshToolsNotifyIcon.ContextMenu.MenuItems.RemoveAt(index);
-            freshToolsNotifyIcon.ContextMenu.MenuItems.Add(index, stopIdlePreventionMenuItem);
-        }
-
-        private void stopIdlePreventionMenuItem_Click(object sender, EventArgs e)
-        {
-            if(idleMonitor!=null)
-            {
-                idleMonitor.StopClockThread();
-            }
-
-            int index = freshToolsNotifyIcon.ContextMenu.MenuItems.IndexOf(stopIdlePreventionMenuItem);
-            freshToolsNotifyIcon.ContextMenu.MenuItems.RemoveAt(index);
-            freshToolsNotifyIcon.ContextMenu.MenuItems.Add(index, startIdlePreventionMenuItem);
-        }
-
         private void windowHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
         {
             MenuItem i = (MenuItem)sender;
