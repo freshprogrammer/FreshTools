@@ -47,13 +47,17 @@ namespace FreshTools
 
             // Create all context menu items and add them to notification tray icon
             MenuItem titleMenuItem = new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version));
-
-            MenuItem windowManagerHotKeysEnabledMenuItem = new MenuItem("Window Control Hot Keys");
+            
+            MenuItem windowManagerHotKeysEnabledMenuItem = new MenuItem("Window Control Hotkeys");
             windowManagerHotKeysEnabledMenuItem.Checked = WindowManager.HotKeysEnabled;
 
+            MenuItem windowManagerMenu = new MenuItem("Window Manager");
             MenuItem windowManagerSaveWindowsMenuItem = new MenuItem("Save All Window Positions");
             MenuItem windowManagerRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions");
             MenuItem windowManagerUndoRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions (undo)");
+            windowManagerMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
 
             MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows");
             startupEnabledMenuItem.Checked = FreshArchives.IsApplicationInStartup();
@@ -64,15 +68,14 @@ namespace FreshTools
             contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(windowManagerHotKeysEnabledMenuItem);
-            contextMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
-            contextMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
-            contextMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
+            contextMenu.MenuItems.Add(windowManagerMenu);
             contextMenu.MenuItems.Add(startupEnabledMenuItem);
             contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(quitMenuItem);
             freshToolsNotifyIcon.ContextMenu = contextMenu;
 
             // Wire up menu items
+            titleMenuItem.Click += titleMenuItem_Click;
             windowManagerHotKeysEnabledMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
             windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
             windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
@@ -132,6 +135,11 @@ namespace FreshTools
         }
 
         #region Context Menu Event Handlers
+        private void titleMenuItem_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show("Fresh Tools\nversion " + Assembly.GetExecutingAssembly().GetName().Version+"\nUpdated:","Fresh Tools",MessageBoxButtons.OK);
+        }
+
         private void windowHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
         {
             MenuItem i = (MenuItem)sender;
