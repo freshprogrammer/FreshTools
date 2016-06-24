@@ -68,6 +68,8 @@ namespace FreshTools
 
             topSizes = new List<RectangleF>(2);
             topSizes.Add(new RectangleF(0, 0, 1, 0.5f));
+            topSizes.Add(new RectangleF(oneThird / 2, 0, oneThirdRoundUp * 2, 0.5f));//2/3 center full height with 1/6 open edges
+            topSizes.Add(new RectangleF(0.25f, 0, 0.5f, 0.5f));//1/2 center full height with 1/4 open edges
             topSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 0.5f));
 
             centerSizes = new List<RectangleF>(2);
