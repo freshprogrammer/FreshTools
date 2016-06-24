@@ -59,10 +59,16 @@ namespace FreshTools
             windowManagerMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
 
+            MenuItem settingsMenu = new MenuItem("Settings");
             MenuItem settingsDirMenuItem = new MenuItem("Open AppData");
+            MenuItem launchAsAdminMenuItem = new MenuItem("ReLaunch As Admin");
 
             MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows");
             startupEnabledMenuItem.Checked = FreshArchives.IsApplicationInStartup();
+
+            settingsMenu.MenuItems.Add(settingsDirMenuItem);
+            settingsMenu.MenuItems.Add(launchAsAdminMenuItem);
+            settingsMenu.MenuItems.Add(startupEnabledMenuItem);
 
             MenuItem quitMenuItem = new MenuItem("Quit");
 
@@ -71,8 +77,7 @@ namespace FreshTools
             contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(windowManagerHotKeysEnabledMenuItem);
             contextMenu.MenuItems.Add(windowManagerMenu);
-            contextMenu.MenuItems.Add(startupEnabledMenuItem);
-            contextMenu.MenuItems.Add(settingsDirMenuItem);
+            contextMenu.MenuItems.Add(settingsMenu);
             contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(quitMenuItem);
             freshToolsNotifyIcon.ContextMenu = contextMenu;
@@ -84,6 +89,7 @@ namespace FreshTools
             windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
             windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
             startupEnabledMenuItem.Click += startupEnabledMenuItem_Click;
+            launchAsAdminMenuItem.Click += launchAsAdminMenuItem_Click;
             settingsDirMenuItem.Click += settingsDirMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
         }
@@ -159,6 +165,16 @@ namespace FreshTools
             else
                 FreshArchives.AddApplicationToStartup();
             i.Checked = FreshArchives.IsApplicationInStartup();
+        }
+
+        private void launchAsAdminMenuItem_Click(object sender, EventArgs e)
+        {
+            Process p = new Process();
+            p.StartInfo.FileName = Application.ExecutablePath;
+            p.StartInfo.Verb = "runas";
+            p.Start();
+            //this process will be killed by the single instance check in the new process
+            Application.Exit();
         }
 
         private void settingsDirMenuItem_Click(object sender, EventArgs e)
