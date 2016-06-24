@@ -147,7 +147,10 @@ namespace FreshTools
         #region Context Menu Event Handlers
         private void titleMenuItem_Click(object sender, EventArgs e)
         {
-            MessageBox.Show("Fresh Tools\nversion " + Assembly.GetExecutingAssembly().GetName().Version+"\nUpdated:","Fresh Tools",MessageBoxButtons.OK);
+            MessageBox.Show("Fresh Tools\n" +
+                            "Version " + Assembly.GetExecutingAssembly().GetName().Version + "\n" +
+                            "By FreshProgrammer on GitHub", 
+                "Fresh Tools", MessageBoxButtons.OK);
         }
 
         private void windowHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
