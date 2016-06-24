@@ -28,10 +28,11 @@ namespace FreshTools
         private static List<WindowInfo> windowInfosBackup = new List<WindowInfo>();
 
         //snap region sizes
-        private static List<RectangleF> cornerSizes;
-        private static List<RectangleF> topSizes;
-        private static List<RectangleF> sideSizes;
-        private static List<RectangleF> centerSizes;
+        const int SnapSizeMaxCount = 9;
+        public static List<RectangleF> CornerSnapSizes;
+        public static List<RectangleF> TopSnapSizes;
+        public static List<RectangleF> SideSnapSizes;
+        public static List<RectangleF> CenterSnapSizes;
 
         //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
         private static Point positionOffset = new Point(-7, 0);
@@ -52,31 +53,97 @@ namespace FreshTools
                 resizeOffset = new Point(0, 0);
             }
 
-            //every set of sizes that uses a third should also use the round up to ensure they utilize all of the screen
-            float oneThird = 1f/3f;
+            LoadSnapSizes();
+        }
+
+        public static void LoadSnapSizes(VariablesFile settingsFile=null)
+        {
+            float oneThird = 1f / 3f;
             float oneThirdRoundUp = 1 - 2 * oneThird;//catch rounding error for last third
 
-            cornerSizes = new List<RectangleF>(3);
-            cornerSizes.Add(new RectangleF(0, 0, 0.5f,  0.5f));
-            cornerSizes.Add(new RectangleF(0, 0, 1-oneThirdRoundUp, 0.5f));
-            cornerSizes.Add(new RectangleF(0, 0, oneThird, 0.5f));
-            
-            sideSizes = new List<RectangleF>(3);
-            sideSizes.Add(new RectangleF(0, 0, 0.5f,  1));
-            sideSizes.Add(new RectangleF(0, 0, 1-oneThirdRoundUp, 1));
-            sideSizes.Add(new RectangleF(0, 0, oneThird, 1));
+            List<RectangleF> defaultCornerSnapSizes = new List<RectangleF>(3);
+            defaultCornerSnapSizes.Add(new RectangleF(0, 0, 0.5f, 0.5f));
+            defaultCornerSnapSizes.Add(new RectangleF(0, 0, 1 - oneThirdRoundUp, 0.5f));
+            defaultCornerSnapSizes.Add(new RectangleF(0, 0, oneThird, 0.5f));
 
-            topSizes = new List<RectangleF>(2);
-            topSizes.Add(new RectangleF(0, 0, 1, 0.5f));
-            topSizes.Add(new RectangleF(oneThird / 2, 0, oneThirdRoundUp * 2, 0.5f));//2/3 center full height with 1/6 open edges
-            topSizes.Add(new RectangleF(0.25f, 0, 0.5f, 0.5f));//1/2 center full height with 1/4 open edges
-            topSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 0.5f));
+            List<RectangleF> defaultSideSnapSizes = new List<RectangleF>(3);
+            defaultSideSnapSizes.Add(new RectangleF(0, 0, 0.5f, 1));
+            defaultSideSnapSizes.Add(new RectangleF(0, 0, 1 - oneThirdRoundUp, 1));
+            defaultSideSnapSizes.Add(new RectangleF(0, 0, oneThird, 1));
 
-            centerSizes = new List<RectangleF>(2);
-            centerSizes.Add(new RectangleF(0, 0, 1, 1));
-            centerSizes.Add(new RectangleF(oneThird / 2, 0, oneThirdRoundUp * 2, 1));//2/3 center full height with 1/6 open edges
-            centerSizes.Add(new RectangleF(0.25f, 0, 0.5f, 1));//1/2 center full height with 1/4 open edges
-            centerSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 1));
+            List<RectangleF> defaultTopSnapSizes = new List<RectangleF>(4);
+            defaultTopSnapSizes.Add(new RectangleF(0, 0, 1, 0.5f));
+            defaultTopSnapSizes.Add(new RectangleF(oneThird / 2, 0, oneThirdRoundUp * 2, 0.5f));//2/3 center full height with 1/6 open edges
+            defaultTopSnapSizes.Add(new RectangleF(0.25f, 0, 0.5f, 0.5f));//1/2 center full height with 1/4 open edges
+            defaultTopSnapSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 0.5f));
+
+            List<RectangleF> defaultCenterSnapSizes = new List<RectangleF>(4);
+            defaultCenterSnapSizes.Add(new RectangleF(0, 0, 1, 1));
+            defaultCenterSnapSizes.Add(new RectangleF(oneThird / 2, 0, oneThirdRoundUp * 2, 1));//2/3 center full height with 1/6 open edges
+            defaultCenterSnapSizes.Add(new RectangleF(0.25f, 0, 0.5f, 1));//1/2 center full height with 1/4 open edges
+            defaultCenterSnapSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 1));
+
+            if (settingsFile == null)
+            {//default values
+                CornerSnapSizes = defaultCornerSnapSizes;
+                SideSnapSizes = defaultSideSnapSizes;
+                TopSnapSizes = defaultTopSnapSizes;
+                CenterSnapSizes = defaultCenterSnapSizes;
+            }
+            else
+            {
+                CornerSnapSizes = new List<RectangleF>();
+                SideSnapSizes = new List<RectangleF>();
+                TopSnapSizes = new List<RectangleF>();
+                CenterSnapSizes = new List<RectangleF>();
+
+                bool anyFound = false;
+                for (int i = 0; i <= SnapSizeMaxCount; i++)
+                {
+                    string name = "CornerSnapSizes" + i;
+                    Variable var = settingsFile.variables.FindVariable(name);
+                    if (var != null)
+                    {//add to snapSizes
+                        RectangleF val = FreshArchives.ParseRectangleF(var.GetValueSaveString());
+                        if (val != RectangleF.Empty)
+                        {
+                            anyFound = true;
+                            CornerSnapSizes.Add(val);
+                        }
+                        else
+                            var.SetValue("Invalid");//there is no way to remove invalid variables
+                    }
+                }
+                if (!anyFound) CornerSnapSizes = defaultCornerSnapSizes;
+            }
+        }
+
+        public static void SaveSnapSizes(VariablesFile settingsFile)
+        {
+            for (int i = 0; i < CornerSnapSizes.Count; i++)
+            {
+                string name = "CornerSnapSizes" + i;
+                string val = CornerSnapSizes[i].X + "," + CornerSnapSizes[i].Y + "," + CornerSnapSizes[i].Width + "," + CornerSnapSizes[i].Height;
+                settingsFile.variables.GetVariable(name, val).SetValue(val);
+            }
+            for (int i = 0; i < SideSnapSizes.Count; i++)
+            {
+                string name = "SideSnapSizes" + i;
+                string val = SideSnapSizes[i].X + "," + SideSnapSizes[i].Y + "," + SideSnapSizes[i].Width + "," + SideSnapSizes[i].Height;
+                settingsFile.variables.GetVariable(name, val).SetValue(val);
+            }
+            for (int i = 0; i < TopSnapSizes.Count; i++)
+            {
+                string name = "TopSnapSizes" + i;
+                string val = TopSnapSizes[i].X + "," + TopSnapSizes[i].Y + "," + TopSnapSizes[i].Width + "," + TopSnapSizes[i].Height;
+                settingsFile.variables.GetVariable(name, val).SetValue(val);
+            }
+            for (int i = 0; i < CenterSnapSizes.Count; i++)
+            {
+                string name = "CenterSnapSizes" + i;
+                string val = CenterSnapSizes[i].X + "," + CenterSnapSizes[i].Y + "," + CenterSnapSizes[i].Width + "," + CenterSnapSizes[i].Height;
+                settingsFile.variables.GetVariable(name, val).SetValue(val);
+            }
         }
 
         private static void EnableHotKeys()
@@ -379,22 +446,22 @@ namespace FreshTools
                 case SnapDirection.TopRight:
                 case SnapDirection.BottomLeft:
                 case SnapDirection.BottomRight:
-                    snapAreas = new RectangleF[cornerSizes.Count];
-                    cornerSizes.CopyTo(snapAreas);
+                    snapAreas = new RectangleF[CornerSnapSizes.Count];
+                    CornerSnapSizes.CopyTo(snapAreas);
                     break;
                 case SnapDirection.Top:
                 case SnapDirection.Bottom:
-                    snapAreas = new RectangleF[topSizes.Count];
-                    topSizes.CopyTo(snapAreas);
+                    snapAreas = new RectangleF[TopSnapSizes.Count];
+                    TopSnapSizes.CopyTo(snapAreas);
                     break;
                 case SnapDirection.Left:
                 case SnapDirection.Right:
-                    snapAreas = new RectangleF[sideSizes.Count];
-                    sideSizes.CopyTo(snapAreas);
+                    snapAreas = new RectangleF[SideSnapSizes.Count];
+                    SideSnapSizes.CopyTo(snapAreas);
                     break;
                 case SnapDirection.Center:
-                    snapAreas = new RectangleF[centerSizes.Count];
-                    centerSizes.CopyTo(snapAreas);
+                    snapAreas = new RectangleF[CenterSnapSizes.Count];
+                    CenterSnapSizes.CopyTo(snapAreas);
                     break;
             }
 

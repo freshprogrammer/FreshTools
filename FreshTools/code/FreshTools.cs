@@ -128,8 +128,9 @@ namespace FreshTools
             //load variables
             bool windowHotKeys = WindowManager.HotKeysEnabled;
             WindowManager.HotKeysEnabled = vars.GetVariable("EnableWindowManager", ref windowHotKeys, true).Boolean;
+            WindowManager.LoadSnapSizes(settingsFile);
+            SaveVariables();//test
 
-            //vars.GetVariable("testVariable", ref testVariable, true);
             LogSystem.Log("Finisihed loading config");
         }
 
@@ -139,8 +140,8 @@ namespace FreshTools
         private void SaveVariables()
         {
             settingsFile.variables.SetValue("EnableWindowManager", "" + WindowManager.HotKeysEnabled);
-            //settingsFile.variables.SetValue("testVariable", "" + testVariable);
 
+            WindowManager.SaveSnapSizes(settingsFile);
             settingsFile.SaveAs(configFilePath);
         }
 
