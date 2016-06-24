@@ -59,6 +59,8 @@ namespace FreshTools
             windowManagerMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
 
+            MenuItem settingsDirMenuItem = new MenuItem("Open AppData");
+
             MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows");
             startupEnabledMenuItem.Checked = FreshArchives.IsApplicationInStartup();
 
@@ -70,6 +72,7 @@ namespace FreshTools
             contextMenu.MenuItems.Add(windowManagerHotKeysEnabledMenuItem);
             contextMenu.MenuItems.Add(windowManagerMenu);
             contextMenu.MenuItems.Add(startupEnabledMenuItem);
+            contextMenu.MenuItems.Add(settingsDirMenuItem);
             contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(quitMenuItem);
             freshToolsNotifyIcon.ContextMenu = contextMenu;
@@ -81,6 +84,7 @@ namespace FreshTools
             windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
             windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
             startupEnabledMenuItem.Click += startupEnabledMenuItem_Click;
+            settingsDirMenuItem.Click += settingsDirMenuItem_Click;
             quitMenuItem.Click += quitMenuItem_Click;
         }
 
@@ -155,6 +159,12 @@ namespace FreshTools
             else
                 FreshArchives.AddApplicationToStartup();
             i.Checked = FreshArchives.IsApplicationInStartup();
+        }
+
+        private void settingsDirMenuItem_Click(object sender, EventArgs e)
+        {
+            //open this appdata folder
+            Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name);
         }
 
         /// <summary>
