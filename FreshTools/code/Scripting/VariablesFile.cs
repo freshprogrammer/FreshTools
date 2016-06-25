@@ -94,7 +94,7 @@ namespace FreshTools
                 if (includedVars.Contains(var))
                 {
                     //remove from temp list to speed up future look ups
-                    includedVars.Remove(var);
+                    includedVars.Remove(var);//this is unneccisary since this temp list is never used again
                     //skip this variable
                 }
                 else
@@ -103,7 +103,7 @@ namespace FreshTools
                     {
                         result += SCRIPT_LINE_BREAK;
                     }
-                    result += var.saveString();
+                    result += var.SaveString();
                 }
             }
             return result;
@@ -174,7 +174,7 @@ namespace FreshTools
                     //return the original content 
                     return Content;
                 case LineType.Variable:
-                    return Variable.saveString();
+                    return Variable.SaveString();
             }
         }
     }

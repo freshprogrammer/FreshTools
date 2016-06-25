@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace FreshTools
 {
@@ -10,7 +12,6 @@ namespace FreshTools
     /// </summary>
     public class Profiler
     {
-
         private const string lineBreak = "\n";
         private const bool CaseSensitive = false;
         private static readonly DateTime zeroHour;
