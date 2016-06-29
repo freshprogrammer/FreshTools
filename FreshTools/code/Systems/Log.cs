@@ -68,12 +68,12 @@ namespace FreshTools
             Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
 
             //create first log record
-            LogMessage(Assembly.GetExecutingAssembly().GetName().Name + " (v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version) + ")");
+            I(Assembly.GetExecutingAssembly().GetName().Name + " (v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version) + ")");
         }
 
-        private static void LogMessage(string msg, LogLevel logLevel=LogLevel.Information, string tag=null)
+        private static void LogMessage(string msg, LogLevel logLevel = LogLevel.Information, string tag = null, int stackDepth = 2)
         {
-            MethodBase mb = new StackTrace().GetFrame(1).GetMethod();
+            MethodBase mb = new StackTrace().GetFrame(stackDepth).GetMethod();
             string methodName = mb.DeclaringType + "." + mb.Name;
 
             LogRecord rec = new LogRecord(msg, methodName, logLevel, tag);
