@@ -20,7 +20,7 @@ namespace FreshTools
         public FreshTools()
         {
             Thread.CurrentThread.Name = "FreshTools Thread";
-            LogSystem.Init();
+            Log.Init();
             LoadConfig();
 
             Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
@@ -29,7 +29,7 @@ namespace FreshTools
 
             RegisterHotkeys();
 
-            LogSystem.Log("FreshTools started sucsessfully");
+            Log.I("FreshTools started sucsessfully");
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace FreshTools
             WindowManager.SnapHotKeysEnabled = vars.GetVariable("MiscWindowHoyKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
             WindowManager.LoadSnapSizes(settingsFile);
 
-            LogSystem.Log("Finisihed loading config");
+            Log.I("Finisihed loading config");
         }
 
         /// <summary>
@@ -226,7 +226,7 @@ namespace FreshTools
         /// <param name="e"></param>
         private void quitMenuItem_Click(object sender, EventArgs e)
         {
-            LogSystem.Log("quitMenuItem_Click()");
+            Log.I("quitMenuItem_Click()");
             freshToolsNotifyIcon.Dispose();
             SaveVariables();
             Application.Exit();
@@ -242,7 +242,7 @@ namespace FreshTools
         private static void RegisterHotkeys()
         {
             //register hotkey(s)
-            //GenericsClass.LogSystem("Registering Hotkeys");
+            //GenericsClass.Log("Registering Hotkeys");
             HotKeyManager.GenericHotKeyPressedHandler += new EventHandler<HotKeyEventArgs>(GenericHotKeyPressed);
             //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.C);
             //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.X);
@@ -268,12 +268,12 @@ namespace FreshTools
                 else //unknown hot key pressed
                 {
                     //uncaught hotkey
-                    LogSystem.Log("UnActioned - " + args.Modifiers + "+" + args.Key + "");
+                    Log.I("UnActioned - " + args.Modifiers + "+" + args.Key + "");
                 }
             }
             catch (Exception e)
             {
-                LogSystem.Log("Exception#" + LogSystem.IncrementExceptionCount() + " in FreshTools.HotKeyPressed(object,HotKeyEventArgs) - " + e);
+                Log.Exception(e);
             }
         }
         #endregion

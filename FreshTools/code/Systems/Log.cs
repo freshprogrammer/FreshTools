@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace FreshTools
 {
-    public static class LogSystem
+    public static class Log
     {
         //file
         private static object logFileLock = new Object();
@@ -44,7 +44,7 @@ namespace FreshTools
         public static void Init(string logFileFullName, int logMemoryCount = LOG_MEMORY_DEFAULT_COUNT)
         {
             //setup local variables
-            LogSystem.logMemoryCount = logMemoryCount;
+            Log.logMemoryCount = logMemoryCount;
             logCount = 0;
             exceptionCount = 0;
             logRecords = new FixedSizeArray<LogRecord>(logMemoryCount);
@@ -68,15 +68,15 @@ namespace FreshTools
             Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
 
             //create first log record
-            Log(Assembly.GetExecutingAssembly().GetName().Name + " (v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version) + ")");
+            LogMessage(Assembly.GetExecutingAssembly().GetName().Name + " (v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version) + ")");
         }
 
-        public static void Log(string log, LogLevel logLevel=LogLevel.Information, string tag=null)
+        private static void LogMessage(string msg, LogLevel logLevel=LogLevel.Information, string tag=null)
         {
             MethodBase mb = new StackTrace().GetFrame(1).GetMethod();
             string methodName = mb.DeclaringType + "." + mb.Name;
 
-            LogRecord rec = new LogRecord(log, methodName, logLevel, tag);
+            LogRecord rec = new LogRecord(msg, methodName, logLevel, tag);
             AppendLog(rec);
 
             if (rec.LogLevel <= ConsoleLogLevel)
@@ -94,6 +94,26 @@ namespace FreshTools
                     }
                 }
             }
+        }
+
+        public static void V(string msg, string tag = null) { LogMessage(msg, LogLevel.Verbose, tag); }
+        public static void I(string msg, string tag = null) { LogMessage(msg, LogLevel.Information, tag); }
+        public static void W(string msg, string tag = null) { LogMessage(msg, LogLevel.Warning, tag); }
+        public static void E(string msg, string tag = null) { LogMessage(msg, LogLevel.Error, tag); }
+        public static void F(string msg, string tag = null) { LogMessage(msg, LogLevel.FatalError, tag); }
+
+        public static void WTF(string msg, string tag = null)
+        {
+            Debug.Assert(false);
+            LogMessage(msg, LogLevel.FatalError, tag);
+        }
+
+        public static void Exception(Exception e)
+        {
+            IncrementExceptionCount();
+            MethodBase mb = new StackTrace().GetFrame(1).GetMethod();
+            string methodName = mb.DeclaringType + "." + mb.Name;
+            E("Exception#" + exceptionCount + " in " + methodName + " - " + e);
         }
 
         public static int IncrementExceptionCount()

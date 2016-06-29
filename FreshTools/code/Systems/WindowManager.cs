@@ -525,7 +525,7 @@ namespace FreshTools
                 else a = 255;
             }
             if (a < MinWindowAlpha) a = MinWindowAlpha;
-            //LogSystem.Log("set alpha " + a + " on " + handle, LogLevel.Information);
+            //Log.Log("set alpha " + a + " on " + handle, LogLevel.Information);
 
             //Enable extended layered style on window if not enabled
             SetWindowLong(handle, GWL_EXSTYLE, GetWindowLong(handle, GWL_EXSTYLE) | WS_EX_LAYERED);
@@ -906,7 +906,7 @@ namespace FreshTools
                 WindowInfo wInfo = new WindowInfo(w);
                 saveInfos.Add(wInfo);
             }
-            LogSystem.Log("Saved " + saveInfos.Count + " window positions");
+            Log.I("Saved " + saveInfos.Count + " window positions");
         }
 
         private static void RestoreAllWindowPositions(bool normalRestore)
@@ -923,9 +923,9 @@ namespace FreshTools
             }
 
             if (normalRestore)
-                LogSystem.Log("Restored " + successCount + "/" + restoreInfos.Count + " window positions");
+                Log.I("Restored " + successCount + "/" + restoreInfos.Count + " window positions");
             else
-                LogSystem.Log("Reset " + successCount + "/" + restoreInfos.Count + " window positions");
+                Log.I("Reset " + successCount + "/" + restoreInfos.Count + " window positions");
         }
 
         private class WindowInfo
