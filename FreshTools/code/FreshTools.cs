@@ -137,11 +137,11 @@ namespace FreshTools
 
             //load variables
             bool snapHotKeysEnabled = WindowManager.SnapHotKeysEnabled;
-            WindowManager.SnapHotKeysEnabled = vars.GetVariable("SnapWindowHoyKeysEnabled", ref snapHotKeysEnabled, true).Boolean;
+            WindowManager.SnapHotKeysEnabled = vars.GetVariable("SnapWindowHotKeysEnabled", ref snapHotKeysEnabled, true).Boolean;
             bool snapAltHotKeysEnabled = WindowManager.SnapAltHotKeysEnabled;
-            WindowManager.SnapHotKeysEnabled = vars.GetVariable("SnapAltWindowHoyKeysEnabled", ref snapAltHotKeysEnabled, true).Boolean;
+            WindowManager.SnapAltHotKeysEnabled = vars.GetVariable("SnapAltWindowHotKeysEnabled", ref snapAltHotKeysEnabled, true).Boolean;
             bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled;
-            WindowManager.SnapHotKeysEnabled = vars.GetVariable("MiscWindowHoyKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
+            WindowManager.MiscHotKeysEnabled = vars.GetVariable("MiscWindowHotKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
             WindowManager.LoadSnapSizes(settingsFile);
 
             Log.I("Finisihed loading config");
@@ -152,9 +152,9 @@ namespace FreshTools
         /// </summary>
         private void SaveVariables()
         {
-            settingsFile.variables.SetValue("SnapWindowHoyKeysEnabled", "" + WindowManager.SnapHotKeysEnabled);
-            settingsFile.variables.SetValue("SnapAltWindowHoyKeysEnabled", "" + WindowManager.SnapAltHotKeysEnabled);
-            settingsFile.variables.SetValue("MiscWindowHoyKeysEnabled", "" + WindowManager.MiscHotKeysEnabled);
+            settingsFile.variables.SetValue("SnapWindowHotKeysEnabled", "" + WindowManager.SnapHotKeysEnabled);
+            settingsFile.variables.SetValue("SnapAltWindowHotKeysEnabled", "" + WindowManager.SnapAltHotKeysEnabled);
+            settingsFile.variables.SetValue("MiscWindowHotKeysEnabled", "" + WindowManager.MiscHotKeysEnabled);
 
             WindowManager.SaveSnapSizes(settingsFile);
             settingsFile.SaveAs(configFilePath);
