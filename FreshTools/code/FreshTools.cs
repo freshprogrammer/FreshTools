@@ -47,14 +47,23 @@ namespace FreshTools
 
             // Create all context menu items and add them to notification tray icon
             MenuItem titleMenuItem = new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version));
-            
-            MenuItem windowManagerHotKeysEnabledMenuItem = new MenuItem("Window Control Hotkeys");
-            windowManagerHotKeysEnabledMenuItem.Checked = WindowManager.HotKeysEnabled;
+
+            MenuItem windowManagerSnapHotKeysEnabledMenuItem = new MenuItem("Window Snap Hotkeys");
+            windowManagerSnapHotKeysEnabledMenuItem.Checked = WindowManager.SnapHotKeysEnabled;
+            MenuItem windowManagerSnapAltHotKeysEnabledMenuItem = new MenuItem("Window Snap Alt Hotkeys");
+            windowManagerSnapAltHotKeysEnabledMenuItem.Checked = WindowManager.SnapAltHotKeysEnabled;
+            MenuItem windowManagerMiscHotKeysEnabledMenuItem = new MenuItem("Window General Hotkeys");
+            windowManagerMiscHotKeysEnabledMenuItem.Checked = WindowManager.MiscHotKeysEnabled;
 
             MenuItem windowManagerMenu = new MenuItem("Window Manager");
             MenuItem windowManagerSaveWindowsMenuItem = new MenuItem("Save All Window Positions");
             MenuItem windowManagerRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions");
             MenuItem windowManagerUndoRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions (undo)");
+
+            windowManagerMenu.MenuItems.Add(windowManagerSnapHotKeysEnabledMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerSnapAltHotKeysEnabledMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerMiscHotKeysEnabledMenuItem);
+            windowManagerMenu.MenuItems.Add(new MenuItem("-"));
             windowManagerMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
@@ -75,7 +84,6 @@ namespace FreshTools
             ContextMenu contextMenu = new ContextMenu();
             contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(new MenuItem("-"));
-            contextMenu.MenuItems.Add(windowManagerHotKeysEnabledMenuItem);
             contextMenu.MenuItems.Add(windowManagerMenu);
             contextMenu.MenuItems.Add(settingsMenu);
             contextMenu.MenuItems.Add(new MenuItem("-"));
@@ -84,7 +92,9 @@ namespace FreshTools
 
             // Wire up menu items
             titleMenuItem.Click += titleMenuItem_Click;
-            windowManagerHotKeysEnabledMenuItem.Click += windowHotKeysEnabledMenuItem_Click;
+            windowManagerSnapHotKeysEnabledMenuItem.Click += windowManagerSnapHotKeysEnabledMenuItem_Click;
+            windowManagerSnapAltHotKeysEnabledMenuItem.Click += windowManagerSnapAltHotKeysEnabledMenuItem_Click;
+            windowManagerMiscHotKeysEnabledMenuItem.Click += windowManagerMiscHotKeysEnabledMenuItem_Click;
             windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
             windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
             windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
@@ -124,10 +134,14 @@ namespace FreshTools
         {
             settingsFile = new VariablesFile(configFilePath, null, false);
             VariableLibrary vars = settingsFile.variables;
-            
+
             //load variables
-            bool windowHotKeys = WindowManager.HotKeysEnabled;
-            WindowManager.HotKeysEnabled = vars.GetVariable("EnableWindowManager", ref windowHotKeys, true).Boolean;
+            bool snapHotKeysEnabled = WindowManager.SnapHotKeysEnabled;
+            WindowManager.SnapHotKeysEnabled = vars.GetVariable("SnapWindowHoyKeysEnabled", ref snapHotKeysEnabled, true).Boolean;
+            bool snapAltHotKeysEnabled = WindowManager.SnapAltHotKeysEnabled;
+            WindowManager.SnapHotKeysEnabled = vars.GetVariable("SnapAltWindowHoyKeysEnabled", ref snapAltHotKeysEnabled, true).Boolean;
+            bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled;
+            WindowManager.SnapHotKeysEnabled = vars.GetVariable("MiscWindowHoyKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
             WindowManager.LoadSnapSizes(settingsFile);
 
             LogSystem.Log("Finisihed loading config");
@@ -138,7 +152,9 @@ namespace FreshTools
         /// </summary>
         private void SaveVariables()
         {
-            settingsFile.variables.SetValue("EnableWindowManager", "" + WindowManager.HotKeysEnabled);
+            settingsFile.variables.SetValue("SnapWindowHoyKeysEnabled", "" + WindowManager.SnapHotKeysEnabled);
+            settingsFile.variables.SetValue("SnapAltWindowHoyKeysEnabled", "" + WindowManager.SnapAltHotKeysEnabled);
+            settingsFile.variables.SetValue("MiscWindowHoyKeysEnabled", "" + WindowManager.MiscHotKeysEnabled);
 
             WindowManager.SaveSnapSizes(settingsFile);
             settingsFile.SaveAs(configFilePath);
@@ -153,11 +169,28 @@ namespace FreshTools
                 "Fresh Tools", MessageBoxButtons.OK);
         }
 
-        private void windowHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
+        private void windowManagerSnapHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
         {
             MenuItem i = (MenuItem)sender;
             i.Checked = !i.Checked;
-            WindowManager.HotKeysEnabled = i.Checked;
+            WindowManager.SnapHotKeysEnabled = i.Checked;
+            SaveVariables();
+        }
+
+        private void windowManagerSnapAltHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
+        {
+            MenuItem i = (MenuItem)sender;
+            i.Checked = !i.Checked;
+            WindowManager.SnapAltHotKeysEnabled = i.Checked;
+            SaveVariables();
+        }
+
+        private void windowManagerMiscHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
+        {
+            MenuItem i = (MenuItem)sender;
+            i.Checked = !i.Checked;
+            WindowManager.MiscHotKeysEnabled = i.Checked;
+            SaveVariables();
         }
 
         private void startupEnabledMenuItem_Click(object sender, EventArgs e)

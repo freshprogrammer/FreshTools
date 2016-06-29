@@ -17,10 +17,14 @@ namespace FreshTools
 
         //public ajustable settings
         public static bool WrapLeftRightScreens = true;
-        public static bool HotKeysEnabled { get { return hotKeysEnabled; } set { if (value)EnableHotKeys(); else DisableHotKeys(); } }
+        public static bool SnapHotKeysEnabled { get { return snapHotKeysEnabled; } set { if (value)EnableSnapHotKeys(); else DisableSnapHotKeys(); } }
+        public static bool SnapAltHotKeysEnabled { get { return snapAltHotKeysEnabled; } set { if (value)EnableSnapAltHotKeys(); else DisableSnapAltHotKeys(); } }
+        public static bool MiscHotKeysEnabled { get { return miscHotKeysEnabled; } set { if (value)EnableMiscHotKeys(); else DisableMiscHotKeys(); } }
 
-        //private local variables
-        private static bool hotKeysEnabled = false;
+        //private local variables with default values
+        private static bool snapHotKeysEnabled = true;
+        private static bool snapAltHotKeysEnabled = false;
+        private static bool miscHotKeysEnabled = true;
 
         //window info for saving and restoring window possitions
         private static DateTime windowInfoSaveTime = DateTime.MinValue;
@@ -199,14 +203,11 @@ namespace FreshTools
             }
         }
 
-        private static void EnableHotKeys()
+        private static void EnableSnapHotKeys()
         {
-            if (!hotKeysEnabled)
+            if (!snapHotKeysEnabled)
             {
-                hotKeysEnabled = true;
-                //move window between monitors
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A, MoveActiveWindowToLeftScreen);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S, MoveActiveWindowToRightScreen);
+                snapHotKeysEnabled = true;
                 //snap window to zones
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1, MoveActiveWindowToBottomLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2, MoveActiveWindowToBottom);
@@ -217,32 +218,14 @@ namespace FreshTools
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7, MoveActiveWindowToTopLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8, MoveActiveWindowToTop);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9, MoveActiveWindowToTopRight);
-                //snap window to zones - alternate keys
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Oemcomma,      MoveActiveWindowToBottomLeft);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemPeriod,     MoveActiveWindowToBottom);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemQuestion,   MoveActiveWindowToBottomRight);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.K,             MoveActiveWindowToLeft);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.L,             MoveActiveWindowToCenter);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemSemicolon,  MoveActiveWindowToRight);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.I,             MoveActiveWindowToTopLeft);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.O,             MoveActiveWindowToTop);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.P,             MoveActiveWindowToTopRight);
-                //Adjust window transprency
-                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add,       IncreaseWindowTranspancy);
-                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract,  DecreaseWindowTranspancy);
-                //send windw to back
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W, SendActiveWindowToBack);
             }
         }
 
-        private static void DisableHotKeys()
+        private static void DisableSnapHotKeys()
         {
-            if (hotKeysEnabled)
+            if (snapHotKeysEnabled)
             {
-                hotKeysEnabled = false;
-                //move window between monitors
-                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
-                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
+                snapHotKeysEnabled = false;
                 //snap window to zones
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2);
@@ -253,6 +236,32 @@ namespace FreshTools
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
+            }
+        }
+
+        private static void EnableSnapAltHotKeys()
+        {
+            if (!snapAltHotKeysEnabled)
+            {
+                snapAltHotKeysEnabled = true;
+                //snap window to zones - alternate keys
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Oemcomma, MoveActiveWindowToBottomLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemPeriod, MoveActiveWindowToBottom);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemQuestion, MoveActiveWindowToBottomRight);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.K, MoveActiveWindowToLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.L, MoveActiveWindowToCenter);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemSemicolon, MoveActiveWindowToRight);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.I, MoveActiveWindowToTopLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.O, MoveActiveWindowToTop);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.P, MoveActiveWindowToTopRight);
+            }
+        }
+
+        private static void DisableSnapAltHotKeys()
+        {
+            if (snapAltHotKeysEnabled)
+            {
+                snapAltHotKeysEnabled = false;
                 //snap window to zones - alternate keys
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Oemcomma);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemPeriod);
@@ -263,6 +272,33 @@ namespace FreshTools
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.I);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.O);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.P);
+            }
+        }
+
+        private static void EnableMiscHotKeys()
+        {
+            if (!miscHotKeysEnabled)
+            {
+                miscHotKeysEnabled = true;
+                //move window between monitors
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A, MoveActiveWindowToLeftScreen);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S, MoveActiveWindowToRightScreen);
+                //Adjust window transprency
+                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add, IncreaseWindowTranspancy);
+                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract, DecreaseWindowTranspancy);
+                //send windw to back
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W, SendActiveWindowToBack);
+            }
+        }
+
+        private static void DisableMiscHotKeys()
+        {
+            if (miscHotKeysEnabled)
+            {
+                miscHotKeysEnabled = false;
+                //move window between monitors
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
                 //Adjust window transprency
                 HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract);
