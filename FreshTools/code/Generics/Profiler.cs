@@ -176,11 +176,11 @@ namespace FreshTools
     }
     public class CodeProfile
     {
-        private double minTime;
-        private double maxTime;
+        private double recentMinTime;
+        private double recentMaxTime;
         private double recentTotalTime;
         private int recentCalls;
-        private List<double> callTimes;
+        private List<double> recentCallTimes;
 
         private double allTimeMinTime;
         private double allTimeMaxTime;
@@ -190,12 +190,12 @@ namespace FreshTools
 
         public string Name;
 
-        public double MinTime { get { return minTime; } }
-        public double MaxTime { get { return maxTime; } }
+        public double MinTime { get { return recentMinTime; } }
+        public double MaxTime { get { return recentMaxTime; } }
         public double TotalTime { get { return recentTotalTime; } }
         public double AverageTime { get { if (recentCalls == 0)return 0; return recentTotalTime / recentCalls; } }
         public int TotalCalls { get { return recentCalls; } }
-        public List<double> CallTimes { get { return callTimes; } }
+        public List<double> CallTimes { get { return recentCallTimes; } }
 
         public double AllTimeMinTime { get { return allTimeMinTime; } }
         public double AllTimeMaxTime { get { return allTimeMaxTime; } }
@@ -214,18 +214,18 @@ namespace FreshTools
         public CodeProfile(string name)
         {
             Name = name;
-            callTimes = new List<double>();
+            recentCallTimes = new List<double>();
             allTimeCallTimes = new List<double>();
             ResetAll();
         }
 
         public void ResetRecent()
         {
-            minTime = int.MaxValue;
-            maxTime = int.MinValue;
+            recentMinTime = int.MaxValue;
+            recentMaxTime = int.MinValue;
             recentTotalTime = 0;
             recentCalls = 0;
-            callTimes.Clear();
+            recentCallTimes.Clear();
         }
 
         public void ResetAll()
@@ -240,14 +240,14 @@ namespace FreshTools
 
         public void AddProfileTime(double time)
         {
-            if (time < minTime)
-                minTime = time;
-            if (time > maxTime)
-                maxTime = time;
+            if (time < recentMinTime)
+                recentMinTime = time;
+            if (time > recentMaxTime)
+                recentMaxTime = time;
 
             recentCalls++;
             recentTotalTime += time;
-            callTimes.Add(time);
+            recentCallTimes.Add(time);
 
             if (time < allTimeMinTime)
                 allTimeMinTime = time;
