@@ -100,10 +100,9 @@ namespace FreshTools
                 bool anyFound = false;
                 for (int i = 0; i <= SnapSizeMaxCount; i++)
                 {
-                    string name = "CornerSnapSizes" + i;
-                    Variable var = settingsFile.variables.FindVariable(name);
-                    if (var != null)
-                    {//add to snapSizes
+                    Variable var = settingsFile.variables.FindVariable("CornerSnapSizes" + i);
+                    if (var != null)//add to snapSizes
+                    {
                         RectangleF val = FreshArchives.ParseRectangleF(var.GetValueSaveString());
                         if (val != RectangleF.Empty)
                         {
@@ -111,10 +110,64 @@ namespace FreshTools
                             CornerSnapSizes.Add(val);
                         }
                         else
-                            var.SetValue("Invalid");//there is no way to remove invalid variables
+                            settingsFile.variables.RemoveVariable(var);
                     }
                 }
                 if (!anyFound) CornerSnapSizes = defaultCornerSnapSizes;
+
+                anyFound = false;
+                for (int i = 0; i <= SnapSizeMaxCount; i++)
+                {
+                    Variable var = settingsFile.variables.FindVariable("SideSnapSizes" + i);
+                    if (var != null)//add to snapSizes
+                    {
+                        RectangleF val = FreshArchives.ParseRectangleF(var.GetValueSaveString());
+                        if (val != RectangleF.Empty)
+                        {
+                            anyFound = true;
+                            SideSnapSizes.Add(val);
+                        }
+                        else
+                            settingsFile.variables.RemoveVariable(var);
+                    }
+                }
+                if (!anyFound) SideSnapSizes = defaultSideSnapSizes;
+
+                anyFound = false;
+                for (int i = 0; i <= SnapSizeMaxCount; i++)
+                {
+                    Variable var = settingsFile.variables.FindVariable("TopSnapSizes" + i);
+                    if (var != null)//add to snapSizes
+                    {
+                        RectangleF val = FreshArchives.ParseRectangleF(var.GetValueSaveString());
+                        if (val != RectangleF.Empty)
+                        {
+                            anyFound = true;
+                            TopSnapSizes.Add(val);
+                        }
+                        else
+                            settingsFile.variables.RemoveVariable(var);
+                    }
+                }
+                if (!anyFound) TopSnapSizes = defaultTopSnapSizes;
+
+                anyFound = false;
+                for (int i = 0; i <= SnapSizeMaxCount; i++)
+                {
+                    Variable var = settingsFile.variables.FindVariable("CenterSnapSizes" + i);
+                    if (var != null)//add to snapSizes
+                    {
+                        RectangleF val = FreshArchives.ParseRectangleF(var.GetValueSaveString());
+                        if (val != RectangleF.Empty)
+                        {
+                            anyFound = true;
+                            CenterSnapSizes.Add(val);
+                        }
+                        else
+                            settingsFile.variables.RemoveVariable(var);
+                    }
+                }
+                if (!anyFound) CenterSnapSizes = defaultCenterSnapSizes;
             }
         }
 
