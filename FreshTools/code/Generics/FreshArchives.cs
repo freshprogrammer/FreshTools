@@ -2,6 +2,7 @@
 using System.Reflection;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using System.Drawing;
 
 namespace FreshTools
 {
@@ -50,6 +51,26 @@ namespace FreshTools
                 var val = key.GetValue(Assembly.GetExecutingAssembly().GetName().Name);
                 return val != null;
             }
+        }
+
+        /// <summary>
+        /// Parses "X,Y,Width,Hight" into RectangleF 
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static RectangleF ParseRectangleF(string input)
+        {
+            try
+            {
+                RectangleF result = RectangleF.Empty;
+                string[] vals = input.Split(',');
+                result.X = float.Parse(vals[0]);
+                result.Y = float.Parse(vals[1]);
+                result.Width = float.Parse(vals[2]);
+                result.Height = float.Parse(vals[3]);
+                return result;
+            }
+            catch (Exception) { return RectangleF.Empty; }
         }
     }
 }
