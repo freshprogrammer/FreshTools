@@ -24,6 +24,15 @@ CTRL ALT Num6 | Snap window to right
 CTRL ALT Num7 | Snap window to top left corner
 CTRL ALT Num8 | Snap window to top
 CTRL ALT Num9 | Snap window to top right corner
+CTRL ALT comma | Snap window to bottom left corner
+CTRL ALT period | Snap window to bottom
+CTRL ALT slash | Snap window to bottom right corner
+CTRL ALT K | Snap window to left
+CTRL ALT L | Snap window to center
+CTRL ALT semicolon | Snap window to right
+CTRL ALT I | Snap window to top left corner
+CTRL ALT O | Snap window to top
+CTRL ALT P | Snap window to top right corner
 CTRL ALT + | Decrease window transparency
 CTRL ALT - | Increase window transparency
 CTRL ALT W | Send window to back

@@ -204,9 +204,10 @@ namespace FreshTools
             if (!hotKeysEnabled)
             {
                 hotKeysEnabled = true;
+                //move window between monitors
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A, MoveActiveWindowToLeftScreen);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S, MoveActiveWindowToRightScreen);
-
+                //snap window to zones
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1, MoveActiveWindowToBottomLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2, MoveActiveWindowToBottom);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3, MoveActiveWindowToBottomRight);
@@ -216,10 +217,20 @@ namespace FreshTools
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7, MoveActiveWindowToTopLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8, MoveActiveWindowToTop);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9, MoveActiveWindowToTopRight);
-
-                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add, IncreaseWindowTranspancy);
-                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract, DecreaseWindowTranspancy);
-
+                //snap window to zones - alternate keys
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Oemcomma,      MoveActiveWindowToBottomLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemPeriod,     MoveActiveWindowToBottom);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemQuestion,   MoveActiveWindowToBottomRight);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.K,             MoveActiveWindowToLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.L,             MoveActiveWindowToCenter);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemSemicolon,  MoveActiveWindowToRight);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.I,             MoveActiveWindowToTopLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.O,             MoveActiveWindowToTop);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.P,             MoveActiveWindowToTopRight);
+                //Adjust window transprency
+                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add,       IncreaseWindowTranspancy);
+                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract,  DecreaseWindowTranspancy);
+                //send windw to back
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W, SendActiveWindowToBack);
             }
         }
@@ -229,9 +240,10 @@ namespace FreshTools
             if (hotKeysEnabled)
             {
                 hotKeysEnabled = false;
+                //move window between monitors
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
-
+                //snap window to zones
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3);
@@ -241,10 +253,20 @@ namespace FreshTools
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
-
+                //snap window to zones - alternate keys
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Oemcomma);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemPeriod);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemQuestion);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.K);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.L);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemSemicolon);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.I);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.O);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.P);
+                //Adjust window transprency
                 HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract);
-
+                //send windw to back
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W);
             }
         }
