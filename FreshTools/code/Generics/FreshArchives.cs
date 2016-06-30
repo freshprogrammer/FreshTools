@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Drawing;
+using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using Microsoft.Win32;
-using System.Drawing;
 
 namespace FreshTools
 {
@@ -71,6 +72,22 @@ namespace FreshTools
                 return result;
             }
             catch (Exception) { return RectangleF.Empty; }
+        }
+
+        /// <summary>
+        /// Move the file to new destination, deleting any file that might exist there
+        /// </summary>
+        /// <param name="src">current full path to file</param>
+        /// <param name="dest">full path to new file</param>
+        public static void MoveFileOverwrite(string src, string dest)
+        {
+            if (File.Exists(src))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                if (File.Exists(dest))
+                    File.Delete(dest);
+                File.Move(src, dest);
+            }
         }
     }
 }
