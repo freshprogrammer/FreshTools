@@ -17,14 +17,17 @@ namespace FreshTools
 
         //public ajustable settings
         public static bool WrapLeftRightScreens = true;
+        public const bool SnapHotKeysEnabled_Default = true;
+        public const bool SnapAltHotKeysEnabled_Default = false;
+        public const bool MiscHotKeysEnabled_Default = true;
         public static bool SnapHotKeysEnabled { get { return snapHotKeysEnabled; } set { if (value)EnableSnapHotKeys(); else DisableSnapHotKeys(); } }
         public static bool SnapAltHotKeysEnabled { get { return snapAltHotKeysEnabled; } set { if (value)EnableSnapAltHotKeys(); else DisableSnapAltHotKeys(); } }
         public static bool MiscHotKeysEnabled { get { return miscHotKeysEnabled; } set { if (value)EnableMiscHotKeys(); else DisableMiscHotKeys(); } }
 
-        //private local variables with default values
-        private static bool snapHotKeysEnabled = true;
+        //private local variables
+        private static bool snapHotKeysEnabled = false;
         private static bool snapAltHotKeysEnabled = false;
-        private static bool miscHotKeysEnabled = true;
+        private static bool miscHotKeysEnabled = false;
 
         //window info for saving and restoring window possitions
         private static DateTime windowInfoSaveTime = DateTime.MinValue;
@@ -56,7 +59,6 @@ namespace FreshTools
                 positionOffset = new Point(0, 0);
                 resizeOffset = new Point(0, 0);
             }
-
             LoadSnapSizes();
         }
 
@@ -205,6 +207,7 @@ namespace FreshTools
 
         private static void EnableSnapHotKeys()
         {
+            Log.I(!snapHotKeysEnabled ? "Enabled" : "Did Nothing");
             if (!snapHotKeysEnabled)
             {
                 snapHotKeysEnabled = true;
@@ -223,6 +226,7 @@ namespace FreshTools
 
         private static void DisableSnapHotKeys()
         {
+            Log.I(snapHotKeysEnabled ? "Disabled" : "Did Nothing");
             if (snapHotKeysEnabled)
             {
                 snapHotKeysEnabled = false;
@@ -241,6 +245,7 @@ namespace FreshTools
 
         private static void EnableSnapAltHotKeys()
         {
+            Log.I(!snapAltHotKeysEnabled ? "Enabled" : "Did Nothing");
             if (!snapAltHotKeysEnabled)
             {
                 snapAltHotKeysEnabled = true;
@@ -259,6 +264,7 @@ namespace FreshTools
 
         private static void DisableSnapAltHotKeys()
         {
+            Log.I(snapAltHotKeysEnabled ? "Disabled" : "Did Nothing");
             if (snapAltHotKeysEnabled)
             {
                 snapAltHotKeysEnabled = false;
@@ -277,6 +283,7 @@ namespace FreshTools
 
         private static void EnableMiscHotKeys()
         {
+            Log.I(!miscHotKeysEnabled ? "Enabled" : "Did Nothing");
             if (!miscHotKeysEnabled)
             {
                 miscHotKeysEnabled = true;
@@ -293,6 +300,7 @@ namespace FreshTools
 
         private static void DisableMiscHotKeys()
         {
+            Log.I(miscHotKeysEnabled ? "Disabled" : "Did Nothing");
             if (miscHotKeysEnabled)
             {
                 miscHotKeysEnabled = false;

@@ -130,17 +130,20 @@ namespace FreshTools
             }
         }
 
+        /// <summary>
+        /// Load variables from config file and update real time settings
+        /// </summary>
         public void LoadConfig()
         {
             settingsFile = new VariablesFile(configFilePath, null, false);
             VariableLibrary vars = settingsFile.variables;
 
             //load variables
-            bool snapHotKeysEnabled = WindowManager.SnapHotKeysEnabled;
+            bool snapHotKeysEnabled = WindowManager.SnapHotKeysEnabled_Default;
             WindowManager.SnapHotKeysEnabled = vars.GetVariable("SnapWindowHotKeysEnabled", ref snapHotKeysEnabled, true).Boolean;
-            bool snapAltHotKeysEnabled = WindowManager.SnapAltHotKeysEnabled;
+            bool snapAltHotKeysEnabled = WindowManager.SnapAltHotKeysEnabled_Default;
             WindowManager.SnapAltHotKeysEnabled = vars.GetVariable("SnapAltWindowHotKeysEnabled", ref snapAltHotKeysEnabled, true).Boolean;
-            bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled;
+            bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled_Default;
             WindowManager.MiscHotKeysEnabled = vars.GetVariable("MiscWindowHotKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
             WindowManager.LoadSnapSizes(settingsFile);
 
@@ -150,7 +153,7 @@ namespace FreshTools
         /// <summary>
         /// Make sure config variables that can be changed are updated in config file
         /// </summary>
-        private void SaveVariables()
+        private void SaveConfig()
         {
             settingsFile.variables.SetValue("SnapWindowHotKeysEnabled", "" + WindowManager.SnapHotKeysEnabled);
             settingsFile.variables.SetValue("SnapAltWindowHotKeysEnabled", "" + WindowManager.SnapAltHotKeysEnabled);
@@ -158,6 +161,8 @@ namespace FreshTools
 
             WindowManager.SaveSnapSizes(settingsFile);
             settingsFile.SaveAs(configFilePath);
+
+            Log.I("Finisihed updating config");
         }
 
         #region Context Menu Event Handlers
@@ -174,7 +179,7 @@ namespace FreshTools
             MenuItem i = (MenuItem)sender;
             i.Checked = !i.Checked;
             WindowManager.SnapHotKeysEnabled = i.Checked;
-            SaveVariables();
+            SaveConfig();
         }
 
         private void windowManagerSnapAltHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
@@ -182,7 +187,7 @@ namespace FreshTools
             MenuItem i = (MenuItem)sender;
             i.Checked = !i.Checked;
             WindowManager.SnapAltHotKeysEnabled = i.Checked;
-            SaveVariables();
+            SaveConfig();
         }
 
         private void windowManagerMiscHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
@@ -190,7 +195,7 @@ namespace FreshTools
             MenuItem i = (MenuItem)sender;
             i.Checked = !i.Checked;
             WindowManager.MiscHotKeysEnabled = i.Checked;
-            SaveVariables();
+            SaveConfig();
         }
 
         private void startupEnabledMenuItem_Click(object sender, EventArgs e)
@@ -201,10 +206,12 @@ namespace FreshTools
             else
                 FreshArchives.AddApplicationToStartup();
             i.Checked = FreshArchives.IsApplicationInStartup();
+            Log.I("Finisihed updating config");
         }
 
         private void launchAsAdminMenuItem_Click(object sender, EventArgs e)
         {
+            Log.I("Relaunching as Admin");
             Process p = new Process();
             p.StartInfo.FileName = Application.ExecutablePath;
             p.StartInfo.Verb = "runas";
@@ -228,7 +235,7 @@ namespace FreshTools
         {
             Log.I("quitMenuItem_Click()");
             freshToolsNotifyIcon.Dispose();
-            SaveVariables();
+            SaveConfig();
             Application.Exit();
         }
         #endregion
