@@ -146,9 +146,9 @@ namespace FreshTools
             bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled_Default;
             WindowManager.MiscHotKeysEnabled = vars.GetVariable("MiscWindowHotKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
             WindowManager.LoadSnapSizes(settingsFile);
-            SaveConfig();
-
             Log.I("Finisihed loading config");
+            //re-write config file in case one didn't exist already
+            SaveConfig();
         }
 
         /// <summary>

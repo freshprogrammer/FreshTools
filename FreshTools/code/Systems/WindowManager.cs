@@ -13,7 +13,7 @@ namespace FreshTools
     /// </summary>
     public static class WindowManager
     {   
-        private const float ComparisonRoundingLimit = 0.001f;//this will need to be broader for lower resolutions since they have less pixes to round to
+        private const float ComparisonRoundingLimit = 0.01f;//this will need to be broader for lower resolutions since they have less pixes to round to
 
         //public ajustable settings
         public static bool WrapLeftRightScreens = true;
