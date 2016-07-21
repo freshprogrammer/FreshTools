@@ -507,7 +507,7 @@ namespace FreshTools
         }
 
         /// <summary>
-        /// Real workhorse of the complex variable logic. Converts variable names to values and does the math and returns final result. If value conversion fails an empty string is returned.
+        /// Real workhorse of the complex variable logic. Converts variable names to values and does the math and returns final result. If value conversion fails returns an empty string.
         /// </summary>
         /// <param name="original">string to be parsed into a value</param>
         /// <returns>value in the form of a Variable</returns>

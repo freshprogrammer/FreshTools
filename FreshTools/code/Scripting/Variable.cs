@@ -255,7 +255,7 @@ namespace FreshTools
             return valueSS;
         }
 
-        public string saveString()
+        public string SaveString()
         {
             return "var " + name + " = " + GetValueSaveString();
         }

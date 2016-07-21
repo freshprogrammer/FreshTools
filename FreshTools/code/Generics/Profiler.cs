@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace FreshTools
 {
@@ -27,9 +29,9 @@ namespace FreshTools
         public static void Start()
         {
 #if (FreshProfilerEnabled)
-                MethodBase mb = new StackTrace().GetFrame(1).GetMethod();
-                string methodName = mb.DeclaringType + "." + mb.Name;
-                Start(methodName);
+            MethodBase mb = new StackTrace().GetFrame(1).GetMethod();
+            string methodName = mb.DeclaringType + "." + mb.Name;
+            Start(methodName);
 #endif
         }
 
@@ -63,7 +65,7 @@ namespace FreshTools
                 }
 
                 activeProfiles.Add(profile);
-                
+
                 // get cur time last - right before leaving the method - as little time overhead as possible
                 double curTime = (DateTime.Now - zeroHour).TotalMilliseconds;
                 profile.StartTime = curTime;
@@ -174,20 +176,33 @@ namespace FreshTools
     }
     public class CodeProfile
     {
-        private double minTime = int.MaxValue;
-        private double maxTime = -1;
-        private double totalTime = 0;
-        private int totalCalls = 0;
+        private double recentMinTime;
+        private double recentMaxTime;
+        private double recentTotalTime;
+        private int recentCalls;
+        private List<double> recentCallTimes;
 
-        private List<double> callTimes;
+        private double allTimeMinTime;
+        private double allTimeMaxTime;
+        private double allTimeTotalTime;
+        private int allTimeCalls;
+        private List<double> allTimeCallTimes;
 
         public string Name;
-        public double MinTime { get { return minTime; } }
-        public double MaxTime { get { return maxTime; } }
-        public double TotalTime { get { return totalTime; } }
-        public double AverageTime { get { if (totalCalls == 0)return 0; return totalTime / totalCalls; } }
-        public int TotalCalls { get { return totalCalls; } }
-        public List<double> CallTimes { get { return callTimes; } }
+
+        public double MinTime { get { return recentMinTime; } }
+        public double MaxTime { get { return recentMaxTime; } }
+        public double TotalTime { get { return recentTotalTime; } }
+        public double AverageTime { get { if (recentCalls == 0)return 0; return recentTotalTime / recentCalls; } }
+        public int TotalCalls { get { return recentCalls; } }
+        public List<double> CallTimes { get { return recentCallTimes; } }
+
+        public double AllTimeMinTime { get { return allTimeMinTime; } }
+        public double AllTimeMaxTime { get { return allTimeMaxTime; } }
+        public double AllTimeTotalTime { get { return allTimeTotalTime; } }
+        public double AllTimeAverageTime { get { if (allTimeCalls == 0)return 0; return allTimeTotalTime / allTimeCalls; } }
+        public int AllTimeTotalCalls { get { return allTimeCalls; } }
+        public List<double> AllTimeCallTimes { get { return allTimeCallTimes; } }
 
 #pragma warning disable
         /// <summary>
@@ -199,24 +214,54 @@ namespace FreshTools
         public CodeProfile(string name)
         {
             Name = name;
-            callTimes = new List<double>();
+            recentCallTimes = new List<double>();
+            allTimeCallTimes = new List<double>();
+            ResetAll();
+        }
+
+        public void ResetRecent()
+        {
+            recentMinTime = int.MaxValue;
+            recentMaxTime = int.MinValue;
+            recentTotalTime = 0;
+            recentCalls = 0;
+            recentCallTimes.Clear();
+        }
+
+        public void ResetAll()
+        {
+            ResetRecent();
+            allTimeMinTime = int.MaxValue;
+            allTimeMaxTime = int.MinValue;
+            allTimeTotalTime = 0;
+            allTimeCalls = 0;
+            allTimeCallTimes.Clear();
         }
 
         public void AddProfileTime(double time)
         {
-            if (time < minTime)
-                minTime = time;
-            if (time > maxTime)
-                maxTime = time;
+            if (time < recentMinTime)
+                recentMinTime = time;
+            if (time > recentMaxTime)
+                recentMaxTime = time;
 
-            totalCalls++;
-            totalTime += time;
-            callTimes.Add(time);
+            recentCalls++;
+            recentTotalTime += time;
+            recentCallTimes.Add(time);
+
+            if (time < allTimeMinTime)
+                allTimeMinTime = time;
+            if (time > allTimeMaxTime)
+                allTimeMaxTime = time;
+
+            allTimeCalls++;
+            allTimeTotalTime += time;
+            allTimeCallTimes.Add(time);
         }
 
         public override string ToString()
         {
-            return Name + "(Avg:" + AverageTime + ")";
+            return Name + "(" + recentCalls + " calls, Avg:" + AverageTime.ToString("F4") + ") (" + allTimeCalls + " calls All Time, Avg:" + AllTimeAverageTime.ToString("F4") + ")";
         }
     }
 }

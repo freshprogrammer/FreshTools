@@ -3,63 +3,220 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows.Forms;
 
 namespace FreshTools
 {
     /// <summary>
-    /// Created as a replacement for the discontinued winsplit revolution on windows 10
+    /// Created as a Windows 10 replacement for the discontinued winsplit revolution
     /// </summary>
     public static class WindowManager
-    {
-        const float ComparisonRoundingLimit = 0.001f;//this will be to be broader for lower resolutions since they have less pixes to round to
+    {   
+        private const float ComparisonRoundingLimit = 0.01f;//this will need to be broader for lower resolutions since they have less pixes to round to
 
+        //public ajustable settings
         public static bool WrapLeftRightScreens = true;
-        public static bool HotKeysEnabled { get { return hotKeysEnabled; } set { if (value)EnableHotKeys(); else DisableHotKeys(); } }
+        public const bool SnapHotKeysEnabled_Default = true;
+        public const bool SnapAltHotKeysEnabled_Default = false;
+        public const bool MiscHotKeysEnabled_Default = true;
+        public static bool SnapHotKeysEnabled { get { return snapHotKeysEnabled; } set { if (value)EnableSnapHotKeys(); else DisableSnapHotKeys(); } }
+        public static bool SnapAltHotKeysEnabled { get { return snapAltHotKeysEnabled; } set { if (value)EnableSnapAltHotKeys(); else DisableSnapAltHotKeys(); } }
+        public static bool MiscHotKeysEnabled { get { return miscHotKeysEnabled; } set { if (value)EnableMiscHotKeys(); else DisableMiscHotKeys(); } }
 
-        private static bool hotKeysEnabled = false;
+        //private local variables
+        private static bool snapHotKeysEnabled = false;
+        private static bool snapAltHotKeysEnabled = false;
+        private static bool miscHotKeysEnabled = false;
 
-        private static List<RectangleF> cornerSizes;
-        private static List<RectangleF> topSizes;
-        private static List<RectangleF> sideSizes;
+        //window info for saving and restoring window possitions
+        private static DateTime windowInfoSaveTime = DateTime.MinValue;
+        private static List<WindowInfo> windowInfos = new List<WindowInfo>();
+        private static List<WindowInfo> windowInfosBackup = new List<WindowInfo>();
+
+        //snap region sizes
+        const int SnapSizeMaxCount = 9;
+        public static List<RectangleF> CornerSnapSizes;
+        public static List<RectangleF> TopSnapSizes;
+        public static List<RectangleF> SideSnapSizes;
+        public static List<RectangleF> CenterSnapSizes;
 
         //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
         private static Point positionOffset = new Point(-7, 0);
-        private static Point resizeOffset = new Point(14, 7);
+        private static Point resizeOffset = new Point(15, 8);
+
+        //alpha control variables
+        private static IntPtr lastWindowAlphaHandle = IntPtr.Zero;
+        private static byte lastWindowAlpha = 0;
+        private const byte WindowAlphaIncrement = 32;
+        private const byte MinWindowAlpha = 32;
 
         #region Setup and teardown
         static WindowManager()
         {
-            //every set of sizes that uses a third should also use the round up to ensure they utilize all of the screen
-            float oneThird = 1f/3f;
-            float oneThirdRoundUp = 1 - 2 * oneThird;//catch rounding error for last third
-
-            cornerSizes = new List<RectangleF>(3);
-            cornerSizes.Add(new RectangleF(0, 0, 0.5f,  0.5f));
-            cornerSizes.Add(new RectangleF(0, 0, 1-oneThirdRoundUp, 0.5f));
-            cornerSizes.Add(new RectangleF(0, 0, oneThird, 0.5f));
-            
-            sideSizes = new List<RectangleF>(3);
-            sideSizes.Add(new RectangleF(0, 0, 0.5f,  1));
-            sideSizes.Add(new RectangleF(0, 0, 1-oneThirdRoundUp, 1));
-            sideSizes.Add(new RectangleF(0, 0, oneThird, 1));
-
-            topSizes = new List<RectangleF>(2);
-            topSizes.Add(new RectangleF(0, 0, 1, 0.5f));
-            topSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 0.5f));
+            if (!FreshArchives.IsWindows10())
+            {
+                positionOffset = new Point(0, 0);
+                resizeOffset = new Point(0, 0);
+            }
+            LoadSnapSizes();
         }
 
-        private static void EnableHotKeys()
+        public static void LoadSnapSizes(VariablesFile settingsFile=null)
         {
-            if (!hotKeysEnabled)
+            float oneThird = 1f / 3f;
+            float oneThirdRoundUp = 1 - 2 * oneThird;//catch rounding error for last third
+
+            List<RectangleF> defaultCornerSnapSizes = new List<RectangleF>(3);
+            defaultCornerSnapSizes.Add(new RectangleF(0, 0, 0.5f, 0.5f));
+            defaultCornerSnapSizes.Add(new RectangleF(0, 0, 1 - oneThirdRoundUp, 0.5f));
+            defaultCornerSnapSizes.Add(new RectangleF(0, 0, oneThird, 0.5f));
+
+            List<RectangleF> defaultSideSnapSizes = new List<RectangleF>(3);
+            defaultSideSnapSizes.Add(new RectangleF(0, 0, 0.5f, 1));
+            defaultSideSnapSizes.Add(new RectangleF(0, 0, 1 - oneThirdRoundUp, 1));
+            defaultSideSnapSizes.Add(new RectangleF(0, 0, oneThird, 1));
+
+            List<RectangleF> defaultTopSnapSizes = new List<RectangleF>(4);
+            defaultTopSnapSizes.Add(new RectangleF(0, 0, 1, 0.5f));
+            defaultTopSnapSizes.Add(new RectangleF(oneThird / 2, 0, oneThirdRoundUp * 2, 0.5f));//2/3 center full height with 1/6 open edges
+            defaultTopSnapSizes.Add(new RectangleF(0.25f, 0, 0.5f, 0.5f));//1/2 center full height with 1/4 open edges
+            defaultTopSnapSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 0.5f));
+
+            List<RectangleF> defaultCenterSnapSizes = new List<RectangleF>(4);
+            defaultCenterSnapSizes.Add(new RectangleF(0, 0, 1, 1));
+            defaultCenterSnapSizes.Add(new RectangleF(oneThird / 2, 0, oneThirdRoundUp * 2, 1));//2/3 center full height with 1/6 open edges
+            defaultCenterSnapSizes.Add(new RectangleF(0.25f, 0, 0.5f, 1));//1/2 center full height with 1/4 open edges
+            defaultCenterSnapSizes.Add(new RectangleF(oneThird, 0, oneThirdRoundUp, 1));
+
+            if (settingsFile == null)
+            {//default values
+                CornerSnapSizes = defaultCornerSnapSizes;
+                SideSnapSizes = defaultSideSnapSizes;
+                TopSnapSizes = defaultTopSnapSizes;
+                CenterSnapSizes = defaultCenterSnapSizes;
+            }
+            else
             {
-                hotKeysEnabled = true;
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A, MoveActiveWindowToLeftScreen);
-                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S, MoveActiveWindowToRightScreen);
+                CornerSnapSizes = new List<RectangleF>();
+                SideSnapSizes = new List<RectangleF>();
+                TopSnapSizes = new List<RectangleF>();
+                CenterSnapSizes = new List<RectangleF>();
+
+                bool anyFound = false;
+                for (int i = 0; i <= SnapSizeMaxCount; i++)
+                {
+                    Variable var = settingsFile.variables.FindVariable("CornerSnapSizes" + i);
+                    if (var != null)//add to snapSizes
+                    {
+                        RectangleF val = FreshArchives.ParseRectangleF(var.GetValueSaveString());
+                        if (val != RectangleF.Empty)
+                        {
+                            anyFound = true;
+                            CornerSnapSizes.Add(val);
+                        }
+                        else
+                            settingsFile.variables.RemoveVariable(var);
+                    }
+                }
+                if (!anyFound) CornerSnapSizes = defaultCornerSnapSizes;
+
+                anyFound = false;
+                for (int i = 0; i <= SnapSizeMaxCount; i++)
+                {
+                    Variable var = settingsFile.variables.FindVariable("SideSnapSizes" + i);
+                    if (var != null)//add to snapSizes
+                    {
+                        RectangleF val = FreshArchives.ParseRectangleF(var.GetValueSaveString());
+                        if (val != RectangleF.Empty)
+                        {
+                            anyFound = true;
+                            SideSnapSizes.Add(val);
+                        }
+                        else
+                            settingsFile.variables.RemoveVariable(var);
+                    }
+                }
+                if (!anyFound) SideSnapSizes = defaultSideSnapSizes;
+
+                anyFound = false;
+                for (int i = 0; i <= SnapSizeMaxCount; i++)
+                {
+                    Variable var = settingsFile.variables.FindVariable("TopSnapSizes" + i);
+                    if (var != null)//add to snapSizes
+                    {
+                        RectangleF val = FreshArchives.ParseRectangleF(var.GetValueSaveString());
+                        if (val != RectangleF.Empty)
+                        {
+                            anyFound = true;
+                            TopSnapSizes.Add(val);
+                        }
+                        else
+                            settingsFile.variables.RemoveVariable(var);
+                    }
+                }
+                if (!anyFound) TopSnapSizes = defaultTopSnapSizes;
+
+                anyFound = false;
+                for (int i = 0; i <= SnapSizeMaxCount; i++)
+                {
+                    Variable var = settingsFile.variables.FindVariable("CenterSnapSizes" + i);
+                    if (var != null)//add to snapSizes
+                    {
+                        RectangleF val = FreshArchives.ParseRectangleF(var.GetValueSaveString());
+                        if (val != RectangleF.Empty)
+                        {
+                            anyFound = true;
+                            CenterSnapSizes.Add(val);
+                        }
+                        else
+                            settingsFile.variables.RemoveVariable(var);
+                    }
+                }
+                if (!anyFound) CenterSnapSizes = defaultCenterSnapSizes;
+            }
+        }
+
+        public static void SaveSnapSizes(VariablesFile settingsFile)
+        {
+            for (int i = 0; i < CornerSnapSizes.Count; i++)
+            {
+                string name = "CornerSnapSizes" + i;
+                string val = CornerSnapSizes[i].X + "," + CornerSnapSizes[i].Y + "," + CornerSnapSizes[i].Width + "," + CornerSnapSizes[i].Height;
+                settingsFile.variables.GetVariable(name, val).SetValue(val);
+            }
+            for (int i = 0; i < SideSnapSizes.Count; i++)
+            {
+                string name = "SideSnapSizes" + i;
+                string val = SideSnapSizes[i].X + "," + SideSnapSizes[i].Y + "," + SideSnapSizes[i].Width + "," + SideSnapSizes[i].Height;
+                settingsFile.variables.GetVariable(name, val).SetValue(val);
+            }
+            for (int i = 0; i < TopSnapSizes.Count; i++)
+            {
+                string name = "TopSnapSizes" + i;
+                string val = TopSnapSizes[i].X + "," + TopSnapSizes[i].Y + "," + TopSnapSizes[i].Width + "," + TopSnapSizes[i].Height;
+                settingsFile.variables.GetVariable(name, val).SetValue(val);
+            }
+            for (int i = 0; i < CenterSnapSizes.Count; i++)
+            {
+                string name = "CenterSnapSizes" + i;
+                string val = CenterSnapSizes[i].X + "," + CenterSnapSizes[i].Y + "," + CenterSnapSizes[i].Width + "," + CenterSnapSizes[i].Height;
+                settingsFile.variables.GetVariable(name, val).SetValue(val);
+            }
+        }
+
+        private static void EnableSnapHotKeys()
+        {
+            Log.I(!snapHotKeysEnabled ? "Enabled" : "Did Nothing");
+            if (!snapHotKeysEnabled)
+            {
+                snapHotKeysEnabled = true;
+                //snap window to zones
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1, MoveActiveWindowToBottomLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2, MoveActiveWindowToBottom);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3, MoveActiveWindowToBottomRight);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad4, MoveActiveWindowToLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad5, MoveActiveWindowToCenter);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad6, MoveActiveWindowToRight);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7, MoveActiveWindowToTopLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8, MoveActiveWindowToTop);
@@ -67,30 +224,103 @@ namespace FreshTools
             }
         }
 
-        private static void DisableHotKeys()
+        private static void DisableSnapHotKeys()
         {
-            if (hotKeysEnabled)
+            Log.I(snapHotKeysEnabled ? "Disabled" : "Did Nothing");
+            if (snapHotKeysEnabled)
             {
-                hotKeysEnabled = false;
-                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
-                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
+                snapHotKeysEnabled = false;
+                //snap window to zones
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad1);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad2);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad3);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad4);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad5);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad6);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
             }
         }
+
+        private static void EnableSnapAltHotKeys()
+        {
+            Log.I(!snapAltHotKeysEnabled ? "Enabled" : "Did Nothing");
+            if (!snapAltHotKeysEnabled)
+            {
+                snapAltHotKeysEnabled = true;
+                //snap window to zones - alternate keys
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Oemcomma, MoveActiveWindowToBottomLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemPeriod, MoveActiveWindowToBottom);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemQuestion, MoveActiveWindowToBottomRight);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.K, MoveActiveWindowToLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.L, MoveActiveWindowToCenter);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemSemicolon, MoveActiveWindowToRight);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.I, MoveActiveWindowToTopLeft);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.O, MoveActiveWindowToTop);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.P, MoveActiveWindowToTopRight);
+            }
+        }
+
+        private static void DisableSnapAltHotKeys()
+        {
+            Log.I(snapAltHotKeysEnabled ? "Disabled" : "Did Nothing");
+            if (snapAltHotKeysEnabled)
+            {
+                snapAltHotKeysEnabled = false;
+                //snap window to zones - alternate keys
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Oemcomma);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemPeriod);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemQuestion);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.K);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.L);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.OemSemicolon);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.I);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.O);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.P);
+            }
+        }
+
+        private static void EnableMiscHotKeys()
+        {
+            Log.I(!miscHotKeysEnabled ? "Enabled" : "Did Nothing");
+            if (!miscHotKeysEnabled)
+            {
+                miscHotKeysEnabled = true;
+                //move window between monitors
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A, MoveActiveWindowToLeftScreen);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S, MoveActiveWindowToRightScreen);
+                //Adjust window transprency
+                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add, IncreaseWindowTranspancy);
+                HotKeyManager.RegisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract, DecreaseWindowTranspancy);
+                //send windw to back
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W, SendActiveWindowToBack);
+            }
+        }
+
+        private static void DisableMiscHotKeys()
+        {
+            Log.I(miscHotKeysEnabled ? "Disabled" : "Did Nothing");
+            if (miscHotKeysEnabled)
+            {
+                miscHotKeysEnabled = false;
+                //move window between monitors
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.A);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.S);
+                //Adjust window transprency
+                HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Add);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.Control | KeyModifiers.Alt), Keys.Subtract);
+                //send windw to back
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.W);
+            }
+        }
         #endregion
 
         #region External functions
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         public static extern IntPtr GetForegroundWindow();
 
-        [DllImport("user32.dll")]
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         public static extern bool GetWindowRect(IntPtr hwnd, ref Rect Rect);
 
         [Serializable, StructLayout(LayoutKind.Sequential)]
@@ -111,8 +341,50 @@ namespace FreshTools
             }
         }
 
+        //SetWindowPos flags
+        private const int SWP_NOSIZE = 0x0001;
+        private const int SWP_NOMOVE = 0x0002;
+        private const int SWP_NOZORDER = 0x0004;
+        private const int SWP_NOACTIVATE = 0x0010;
+        private const int SWP_SHOWWINDOW = 0x0040;
+        //SetWindowPos zlayer flags 
+        private const short HWND_BOTTOM = 1;
+        private const short HWND_NOTOPMOST = -2;
+        private const short HWND_TOP = 0;
+        private const short HWND_TOPMOST = -1;
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
-        public static extern IntPtr SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
+        public static extern bool SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern IntPtr GetShellWindow();
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetWindowText(IntPtr hWnd, StringBuilder strText, int maxCount);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern int GetWindowTextLength(IntPtr hWnd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern bool IsWindowVisible(IntPtr hWnd);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+
+        //SetLayeredWindowAttributes - layered window attributes
+        public const int LWA_COLORKEY = 0x1;
+        public const int LWA_ALPHA = 0x2;
+        [DllImport("user32.dll")]
+        static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte bAlpha, uint dwFlags);
+
+        //GetWindowStyle - get extended window styles
+        public const int GWL_EXSTYLE = -20;
+        [DllImport("user32.dll", SetLastError = true)]
+        static extern UInt32 GetWindowLong(IntPtr hWnd, int nIndex);
+
+        //extended window styles - layered
+        public const int WS_EX_LAYERED = 0x80000;
+        [DllImport("user32.dll")]
+        static extern int SetWindowLong(IntPtr hWnd, int nIndex, UInt32 dwNewLong);
         #endregion
 
         #region Move Window Between screens
@@ -199,14 +471,9 @@ namespace FreshTools
         }
 #endregion
 
-        #region Window movement & snap logic
+        #region Window movement & snap (control) logic
         public static void MoveActiveWindowTo(int x, int y, bool includePosOffset = true)
         {
-            const short SWP_NOSIZE = 1;
-            //const short SWP_NOMOVE = 0X2;
-            const short SWP_NOZORDER = 0X4;
-            const int SWP_SHOWWINDOW = 0x0040;
-
             const int cx = 0;
             const int cy = 0;
 
@@ -219,18 +486,13 @@ namespace FreshTools
                     y += positionOffset.Y;
                 }
 
-                SetWindowPos(handle, 0, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                SetWindowPos(handle, HWND_TOP, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
             }
         }
 
         //if moving window on same screen you need to offset its pos. If moving window between screens the x,y pos should already be know and not need to be re-offset
         private static void MoveActiveWindowTo(int x, int y, int newWidth, int newHeight, bool includePosOffset=true)
         {
-            const short SWP_NOSIZE = 0;
-            //const short SWP_NOMOVE = 0X2;
-            const short SWP_NOZORDER = 0X4;
-            const int SWP_SHOWWINDOW = 0x0040;
-
             IntPtr handle = GetForegroundWindow();
             if (handle != IntPtr.Zero)
             {
@@ -243,7 +505,51 @@ namespace FreshTools
                     newHeight += resizeOffset.Y;
                 }
 
-                SetWindowPos(handle, 0, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                SetWindowPos(handle, HWND_TOP, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_SHOWWINDOW);
+            }
+        }
+
+        private static void SetWindowTransparancy(int d)
+        {
+            byte a;
+            IntPtr handle = GetForegroundWindow();
+
+            if (lastWindowAlphaHandle == handle)
+            {//new change to last window
+                if (d < 0)
+                {
+                    a = (byte)(lastWindowAlpha - WindowAlphaIncrement);
+                    if (a > lastWindowAlpha) a = 0;//set to 0 and dont wrap
+                }
+                else
+                {
+                    a = (byte)(lastWindowAlpha + WindowAlphaIncrement);
+                    if (a < lastWindowAlpha) a = 255;//set to 255 and dont wrap
+                }
+            }
+            else
+            {//new window
+                if (d < 0) a = 255 - WindowAlphaIncrement;
+                else a = 255;
+            }
+            if (a < MinWindowAlpha) a = MinWindowAlpha;
+            //Log.Log("set alpha " + a + " on " + handle, LogLevel.Information);
+
+            //Enable extended layered style on window if not enabled
+            SetWindowLong(handle, GWL_EXSTYLE, GetWindowLong(handle, GWL_EXSTYLE) | WS_EX_LAYERED);
+            //set window transparency
+            SetLayeredWindowAttributes(handle, 0, a, LWA_ALPHA);
+
+            lastWindowAlpha = a;
+            lastWindowAlphaHandle = handle;
+        }
+
+        private static void SendActiveWindowToBack()
+        {
+            IntPtr handle = GetForegroundWindow();
+            if (handle != IntPtr.Zero)
+            {
+                SetWindowPos(handle, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
             }
         }
 
@@ -259,18 +565,22 @@ namespace FreshTools
                 case SnapDirection.TopRight:
                 case SnapDirection.BottomLeft:
                 case SnapDirection.BottomRight:
-                    snapAreas = new RectangleF[cornerSizes.Count];
-                    cornerSizes.CopyTo(snapAreas);
+                    snapAreas = new RectangleF[CornerSnapSizes.Count];
+                    CornerSnapSizes.CopyTo(snapAreas);
                     break;
                 case SnapDirection.Top:
                 case SnapDirection.Bottom:
-                    snapAreas = new RectangleF[topSizes.Count];
-                    topSizes.CopyTo(snapAreas);
+                    snapAreas = new RectangleF[TopSnapSizes.Count];
+                    TopSnapSizes.CopyTo(snapAreas);
                     break;
                 case SnapDirection.Left:
                 case SnapDirection.Right:
-                    snapAreas = new RectangleF[sideSizes.Count];
-                    sideSizes.CopyTo(snapAreas);
+                    snapAreas = new RectangleF[SideSnapSizes.Count];
+                    SideSnapSizes.CopyTo(snapAreas);
+                    break;
+                case SnapDirection.Center:
+                    snapAreas = new RectangleF[CenterSnapSizes.Count];
+                    CenterSnapSizes.CopyTo(snapAreas);
                     break;
             }
 
@@ -282,6 +592,7 @@ namespace FreshTools
                 case SnapDirection.Left:
                 case SnapDirection.Bottom:
                 case SnapDirection.BottomLeft:
+                case SnapDirection.Center:
                     break;//do nothing
                 case SnapDirection.BottomRight:
                 case SnapDirection.TopRight:
@@ -301,6 +612,7 @@ namespace FreshTools
                 case SnapDirection.Right:
                 case SnapDirection.TopLeft:
                 case SnapDirection.TopRight:
+                case SnapDirection.Center:
                     break;//do nothing
                 case SnapDirection.BottomRight:
                 case SnapDirection.Bottom:
@@ -331,6 +643,7 @@ namespace FreshTools
         }
         #endregion
 
+        #region HotKey Functions
         #region Snap active window screen to all 8 directions
         public static void MoveActiveWindowToTop(object o, HotKeyEventArgs args)
         {
@@ -345,6 +658,11 @@ namespace FreshTools
         public static void MoveActiveWindowToLeft(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Left);
+        }
+
+        public static void MoveActiveWindowToCenter(object o, HotKeyEventArgs args)
+        {
+            SnapActiveWindow(SnapDirection.Center);
         }
 
         public static void MoveActiveWindowToRight(object o, HotKeyEventArgs args)
@@ -370,6 +688,22 @@ namespace FreshTools
         public static void MoveActiveWindowToBottomRight(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.BottomRight);
+        }
+        #endregion
+
+        public static void SendActiveWindowToBack(object sender = null, HotKeyEventArgs e = null)
+        {
+            SendActiveWindowToBack();
+        }
+
+        public static void IncreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
+        {
+            SetWindowTransparancy(1);
+        }
+
+        public static void DecreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
+        {
+            SetWindowTransparancy(-1);
         }
         #endregion
 
@@ -487,6 +821,159 @@ namespace FreshTools
         }
         #endregion
 
+        #region Enumerate windows
+        // Delegate to filter which windows to include
+        public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        /// <summary> Get the text for the window pointed to by hWnd </summary>
+        public static string GetWindowText(IntPtr hWnd)
+        {
+            int size = GetWindowTextLength(hWnd);
+            if (size > 0)
+            {
+                var builder = new StringBuilder(size + 1);
+                GetWindowText(hWnd, builder, builder.Capacity);
+                return builder.ToString();
+            }
+
+            return String.Empty;
+        }
+
+        /// <summary> Find all windows that match the given filter </summary>
+        /// <param name="filter"> A delegate that returns true for windows
+        ///    that should be returnThis and false for windows that should
+        ///    not be returnThis </param>
+        public static IEnumerable<IntPtr> FindWindows(EnumWindowsProc filter)
+        {
+            IntPtr found = IntPtr.Zero;
+            List<IntPtr> windows = new List<IntPtr>();
+
+            EnumWindows(delegate(IntPtr wnd, IntPtr param)
+            {
+                if (filter(wnd, param))
+                {
+                    // only add the windows that pass the filter
+                    windows.Add(wnd);
+                }
+
+                // but return true here so that we iterate all windows
+                return true;
+            }, IntPtr.Zero);
+
+            return windows;
+        }
+
+        /// <summary> Find all windows that contain the given title text </summary>
+        /// <param name="titleText"> The text that the window title must contain. </param>
+        public static IEnumerable<IntPtr> FindWindowsWithText(string titleText)
+        {
+            return FindWindows(delegate(IntPtr wnd, IntPtr param)
+            {
+                return GetWindowText(wnd).Contains(titleText);
+            });
+        }
+
+        /// <summary> Find all windows that contain the given title text </summary>
+        /// <param name="titleText"> The text that the window title must contain. </param>
+        public static IEnumerable<IntPtr> FindAllVisibleWindows()
+        {
+            var shell = GetShellWindow();
+            return FindWindows(delegate(IntPtr wnd, IntPtr param)
+            {
+                bool returnThis = wnd != shell;
+                if (returnThis) returnThis = IsWindowVisible(wnd);
+                if (returnThis) returnThis = GetWindowTextLength(wnd) > 0;
+                return returnThis;
+            });
+        }
+        #endregion
+
+        #region Save & Restore all window positions
+        public static void SaveAllWindowPositions(object sender = null, EventArgs e = null)
+        {
+            SaveAllWindowPositions(ref windowInfos);
+        }
+
+        public static void RestoreAllWindowPositions(object sender = null, EventArgs e = null)
+        {
+            RestoreAllWindowPositions(true);
+        }
+
+        public static void UndoRestoreAllWindowPositions(object sender = null, EventArgs e = null)
+        {
+            RestoreAllWindowPositions(false);
+        }
+
+        private static void SaveAllWindowPositions(ref List<WindowInfo> saveInfos)
+        {
+            var windows = FindAllVisibleWindows();
+            saveInfos.Clear();
+
+            foreach (IntPtr w in windows)
+            {
+                WindowInfo wInfo = new WindowInfo(w);
+                saveInfos.Add(wInfo);
+            }
+            Log.I("Saved " + saveInfos.Count + " window positions");
+        }
+
+        private static void RestoreAllWindowPositions(bool normalRestore)
+        {
+            if (normalRestore)
+                SaveAllWindowPositions(ref windowInfosBackup);
+
+            var restoreInfos = normalRestore ? windowInfos : windowInfosBackup;
+            int successCount = 0;
+            foreach (WindowInfo i in restoreInfos)
+            {
+                if (i.RestorePosition())
+                    successCount++;
+            }
+
+            if (normalRestore)
+                Log.I("Restored " + successCount + "/" + restoreInfos.Count + " window positions");
+            else
+                Log.I("Reset " + successCount + "/" + restoreInfos.Count + " window positions");
+        }
+
+        private class WindowInfo
+        {
+            public IntPtr Handle;
+            public Rectangle Rectangle;
+            public string Text;
+
+            public WindowInfo(IntPtr hwnd)
+            {
+                Handle = hwnd;
+
+                Text = GetWindowText(Handle);
+
+                Rect rect = default(Rect);
+                GetWindowRect(Handle, ref rect);
+                Rectangle = rect.ToRectangle();
+            }
+
+            public bool RestorePosition()
+            {
+                const short SWP_NOSIZE = 0;
+                //const short SWP_NOMOVE = 0X2;
+                const short SWP_NOZORDER = 0X4;
+                const int SWP_SHOWWINDOW = 0x0040;
+
+                if (Handle != IntPtr.Zero)
+                {
+                    return SetWindowPos(Handle, 0, Rectangle.X, Rectangle.Y, Rectangle.Width, Rectangle.Height, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                }
+                return false;
+            }
+
+            public override string ToString()
+            {
+                return "WindowInfo() - "+Text + " {" + Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "}";
+            }
+        }
+        #endregion
+
         private enum SnapDirection
         {
             Top,
@@ -497,6 +984,7 @@ namespace FreshTools
             TopRight,
             BottomLeft,
             BottomRight,
+            Center,
         }
     }
 }

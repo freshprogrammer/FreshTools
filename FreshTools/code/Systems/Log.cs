@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace FreshTools
 {
-    public static class LogSystem
+    public static class Log
     {
         //file
         private static object logFileLock = new Object();
@@ -44,7 +44,7 @@ namespace FreshTools
         public static void Init(string logFileFullName, int logMemoryCount = LOG_MEMORY_DEFAULT_COUNT)
         {
             //setup local variables
-            LogSystem.logMemoryCount = logMemoryCount;
+            Log.logMemoryCount = logMemoryCount;
             logCount = 0;
             exceptionCount = 0;
             logRecords = new FixedSizeArray<LogRecord>(logMemoryCount);
@@ -61,22 +61,29 @@ namespace FreshTools
                     logNewer = logFileName.Replace(".txt", "_" + (logIndex - 1) + ".txt");
                 else
                     logNewer = logFileName;
-                MoveFileOverwrite(logNewer, logOlder);
+                FreshArchives.MoveFileOverwrite(logNewer, logOlder);
                 logIndex--;
             }
             //create any necisarry directories for logs
             Directory.CreateDirectory(Path.GetDirectoryName(logFileName));
 
             //create first log record
-            Log(Assembly.GetExecutingAssembly().GetName().Name + " (v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version) + ")");
+            I(Assembly.GetExecutingAssembly().GetName().Name + " (v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version) + ")");
         }
 
-        public static void Log(string log, LogLevel logLevel=LogLevel.Information, string tag=null)
+        /// <summary>
+        /// Handle actualy logging messages to console or log file with specified log level and tag. Also tracks the calling methog name/signature and time stamp for refference.
+        /// </summary>
+        /// <param name="msg">Message to log</param>
+        /// <param name="logLevel">Level of importance. Visiability level</param>
+        /// <param name="tag">Tag to categorize messages</param>
+        /// <param name="stackDepth">Number of call frames from the calling method (default is 2, this & D)</param>
+        private static void LogMessage(string msg, LogLevel logLevel = LogLevel.Information, string tag = null, int stackDepth = 2)
         {
-            MethodBase mb = new StackTrace().GetFrame(1).GetMethod();
+            MethodBase mb = new StackTrace().GetFrame(stackDepth).GetMethod();
             string methodName = mb.DeclaringType + "." + mb.Name;
 
-            LogRecord rec = new LogRecord(log, methodName, logLevel, tag);
+            LogRecord rec = new LogRecord(msg, methodName, logLevel, tag);
             AppendLog(rec);
 
             if (rec.LogLevel <= ConsoleLogLevel)
@@ -96,6 +103,69 @@ namespace FreshTools
             }
         }
 
+        /// <summary>
+        /// Log Verbose Message
+        /// </summary>
+        /// <param name="msg">Message to log</param>
+        /// <param name="tag">Tag to categorize messages</param>
+        public static void V(string msg, string tag = null) { LogMessage(msg, LogLevel.Verbose, tag); }
+
+        /// <summary>
+        /// Log Information Message
+        /// </summary>
+        /// <param name="msg">Message to log</param>
+        /// <param name="tag">Tag to categorize messages</param>
+        public static void I(string msg, string tag = null) { LogMessage(msg, LogLevel.Information, tag); }
+
+        /// <summary>
+        /// Log Warning Message
+        /// </summary>
+        /// <param name="msg">Message to log</param>
+        /// <param name="tag">Tag to categorize messages</param>
+        public static void W(string msg, string tag = null) { LogMessage(msg, LogLevel.Warning, tag); }
+
+        /// <summary>
+        /// Log Error Message
+        /// </summary>
+        /// <param name="msg">Message to log</param>
+        /// <param name="tag">Tag to categorize messages</param>
+        public static void E(string msg, string tag = null) { LogMessage(msg, LogLevel.Error, tag); }
+
+        /// <summary>
+        /// Log Fatal Error Message
+        /// </summary>
+        /// <param name="msg">Message to log</param>
+        /// <param name="tag">Tag to categorize messages</param>
+        public static void F(string msg, string tag = null) { LogMessage(msg, LogLevel.FatalError, tag); }
+
+
+        /// <summary>
+        /// Log Fatal Error Message with Assert to try to debug
+        /// </summary>
+        /// <param name="msg">Message to log</param>
+        /// <param name="tag">Tag to categorize messages</param>
+        public static void WTF(string msg, string tag = null)
+        {
+            Debug.Assert(false);
+            LogMessage(msg, LogLevel.FatalError, tag);
+        }
+
+        /// <summary>
+        /// Log as error with incremented exception number
+        /// </summary>
+        /// <param name="e">exception that occurend</param>
+        public static void Exception(Exception e)
+        {
+            IncrementExceptionCount();
+            MethodBase mb = new StackTrace().GetFrame(1).GetMethod();
+            string methodName = mb.DeclaringType + "." + mb.Name;
+            LogMessage("Exception#" + exceptionCount + " in " + methodName + " - " + e, LogLevel.Error);
+        }
+
+        /// <summary>
+        /// Increment and return the ongoing exception count
+        /// </summary>
+        /// <returns>the new increment count</returns>
         public static int IncrementExceptionCount()
         {
             return ++exceptionCount;
@@ -136,16 +206,6 @@ namespace FreshTools
             logRecords.Add(log);
         }
 
-        public static void MoveFileOverwrite(string src, string dest)
-        {
-            if (File.Exists(src))
-            {
-                Directory.CreateDirectory(Path.GetDirectoryName(dest));
-                if (File.Exists(dest))
-                    File.Delete(dest);
-                File.Move(src, dest);
-            }
-        }
     }
 
     public struct LogRecord
