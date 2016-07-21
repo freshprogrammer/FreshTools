@@ -793,13 +793,12 @@ namespace FreshTools
                 keywordMatch = Keywords.comment;
                 return true;
             }
-
-            if (line == "{")
+            else if (line == "{")
             {
                 keywordMatch = Keywords.openBrace;
                 return true;
             }
-            if (line == "}")
+            else if (line == "}")
             {
                 keywordMatch = Keywords.closeBrace;
                 return true;
@@ -809,7 +808,7 @@ namespace FreshTools
             {
                 if (HasLeadingKeyword(line, keyword, out remainingLine))
                 {
-                    keywordMatch = (Keywords)Enum.Parse(typeof(Keywords), keyword);
+                    Enum.TryParse<Keywords>(keyword, caseSensitive, out keywordMatch);
                     return true;
                 }
             }

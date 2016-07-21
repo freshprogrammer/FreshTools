@@ -183,7 +183,7 @@ namespace FreshTools
             }
         }
 
-        public bool Boolean 
+        public bool Boolean
         { 
             get 
             {

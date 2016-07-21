@@ -55,23 +55,29 @@ namespace FreshTools
         }
 
         /// <summary>
-        /// Parses "X,Y,Width,Hight" into RectangleF 
+        /// Parses "X,Y,Width,Hight" into RectangleF. Returns zero rectangle if failure
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
         public static RectangleF ParseRectangleF(string input)
         {
-            try
+            RectangleF result = RectangleF.Empty;
+            string[] vals = input.Split(',');
+            float x = 0, y = 0, w = 0, h = 0;
+            bool valid = true;
+            valid = valid && float.TryParse(vals[0], out x);
+            valid = valid && float.TryParse(vals[1], out y);
+            valid = valid && float.TryParse(vals[2], out w);
+            valid = valid && float.TryParse(vals[3], out h);
+
+            if (valid)
             {
-                RectangleF result = RectangleF.Empty;
-                string[] vals = input.Split(',');
-                result.X = float.Parse(vals[0]);
-                result.Y = float.Parse(vals[1]);
-                result.Width = float.Parse(vals[2]);
-                result.Height = float.Parse(vals[3]);
-                return result;
+                result.X = x;
+                result.Y = y;
+                result.Width = w;
+                result.Height = h;
             }
-            catch (Exception) { return RectangleF.Empty; }
+            return result;
         }
 
         /// <summary>
