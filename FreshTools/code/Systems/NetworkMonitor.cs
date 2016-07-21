@@ -22,6 +22,8 @@ namespace FreshTools
         public static int PageTimeout = 1000;
         public static int PingShortTimeout = 50;
 
+        public bool IsRunning { get { return managerRunning; } set {} }
+
         public NotifyIcon NotifyIcon;
         
         private Thread managerThread;
@@ -39,6 +41,16 @@ namespace FreshTools
         public void AddMonitor(string site, bool testPing, bool testWebPage)
         {
             monitorThreads.Add(new NetworkMonitorThread(site, testPing, testWebPage));
+        }
+
+        public void ToggleMonitoring(object sender, EventArgs e)
+        {
+            MenuItem i = (MenuItem)sender;
+            if (managerRunning)
+                StopMonitoring();
+            else
+                StartMonitoring();
+            i.Checked = managerRunning;
         }
 
         public void StartMonitoring()
@@ -97,6 +109,12 @@ namespace FreshTools
                 return NetworkStatus.NoInternet;
             else
                 return NetworkStatus.NoIntranet;
+        }
+
+
+        public void RunIPConfig(object sender, EventArgs e)
+        {
+            TestCode();
         }
 
         public static void TestCode()

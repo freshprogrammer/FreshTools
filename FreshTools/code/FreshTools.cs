@@ -13,6 +13,7 @@ namespace FreshTools
         //Notification Icon
         private Icon freshToolsIcon;
         private NotifyIcon freshToolsNotifyIcon;
+        private NetworkMonitor networkMontitor;
 
         //Settings
         private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
@@ -24,6 +25,11 @@ namespace FreshTools
             Log.Init();
             LoadConfig();
 
+            networkMontitor = new NetworkMonitor();
+            networkMontitor.AddMonitor("www.gogle.com", true, true);
+            networkMontitor.AddMonitor("www.freshdistraction.com", true, true);
+            networkMontitor.NotifyIcon = freshToolsNotifyIcon;
+
             Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
             InitializeNotificationIcon();
             freshToolsNotifyIcon.Visible = true;
@@ -32,13 +38,6 @@ namespace FreshTools
 
             Log.I("FreshTools started sucsessfully");
             Log.ConsoleLogLevel = LogLevel.Verbose;
-
-            NetworkMonitor netMan = new NetworkMonitor();
-            //netMan.TestCode();
-            netMan.AddMonitor("www.gogle.com", true, true);
-            netMan.AddMonitor("www.freshdistraction.com", true, true);
-            netMan.NotifyIcon = freshToolsNotifyIcon;
-            netMan.StartMonitoring();
         }
 
         /// <summary>
@@ -64,7 +63,7 @@ namespace FreshTools
             MenuItem windowManagerMiscHotKeysEnabledMenuItem = new MenuItem("Window General Hotkeys");
             windowManagerMiscHotKeysEnabledMenuItem.Checked = WindowManager.MiscHotKeysEnabled;
 
-            MenuItem windowManagerMenu = new MenuItem("Window Manager");
+            MenuItem windowManagerMenu = new MenuItem("Windows");
             MenuItem windowManagerSaveWindowsMenuItem = new MenuItem("Save All Window Positions");
             MenuItem windowManagerRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions");
             MenuItem windowManagerUndoRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions (undo)");
@@ -77,10 +76,18 @@ namespace FreshTools
             windowManagerMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
 
+            MenuItem networkMonitorMenu = new MenuItem("Network");
+            MenuItem networkMonitorStartMenuItem = new MenuItem("Run Network Monitor");
+            networkMonitorStartMenuItem.Checked = networkMontitor.IsRunning;
+            MenuItem networkMonitorIPConfigMenuItem = new MenuItem("IPConfig");
+
+            networkMonitorMenu.MenuItems.Add(networkMonitorStartMenuItem);
+            networkMonitorMenu.MenuItems.Add(networkMonitorIPConfigMenuItem);
+
+
             MenuItem settingsMenu = new MenuItem("Settings");
             MenuItem settingsDirMenuItem = new MenuItem("Open AppData");
             MenuItem launchAsAdminMenuItem = new MenuItem("ReLaunch As Admin");
-
             MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows");
             startupEnabledMenuItem.Checked = FreshArchives.IsApplicationInStartup();
 
@@ -94,6 +101,7 @@ namespace FreshTools
             contextMenu.MenuItems.Add(titleMenuItem);
             contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(windowManagerMenu);
+            contextMenu.MenuItems.Add(networkMonitorMenu);
             contextMenu.MenuItems.Add(settingsMenu);
             contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(quitMenuItem);
@@ -107,6 +115,8 @@ namespace FreshTools
             windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
             windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
             windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
+            networkMonitorStartMenuItem.Click += networkMontitor.ToggleMonitoring;
+            networkMonitorIPConfigMenuItem.Click += networkMontitor.RunIPConfig;
             startupEnabledMenuItem.Click += startupEnabledMenuItem_Click;
             launchAsAdminMenuItem.Click += launchAsAdminMenuItem_Click;
             settingsDirMenuItem.Click += settingsDirMenuItem_Click;
