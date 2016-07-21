@@ -6,6 +6,7 @@ using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Threading;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace FreshTools
 {
@@ -114,7 +115,34 @@ namespace FreshTools
 
         public void RunIPConfig(object sender, EventArgs e)
         {
-            TestCode();
+            const string line_Break = "-------------------------------------------------------------------";
+            List<string> commands = new List<string>();
+            commands.Add("ipconfig");
+            commands.Add("ping 8.8.8.8");
+            commands.Add("tracert 8.8.8.8");
+            commands.Add("ping -a -t 8.8.8.8");
+            string args = "";
+            foreach (string c in commands)
+            {
+                args += "&& echo " + line_Break;
+                args += "&& echo " + c;
+                args += "&& echo " + line_Break;
+                args += "&& " + c;
+            }
+            args = args.Substring(3);//trim first &&s
+
+
+            Process p = new Process();
+            p.StartInfo.WorkingDirectory = @"C:\";
+            p.StartInfo.FileName = "cmd";
+            p.StartInfo.Arguments = "/K " + args;
+            p.StartInfo.RedirectStandardInput = false;
+            p.StartInfo.RedirectStandardOutput = false;
+            p.StartInfo.UseShellExecute = true;
+            p.StartInfo.CreateNoWindow = false;
+            p.Start();
+
+            Log.I("Started Ipconfig and ping");
         }
 
         public static void TestCode()
