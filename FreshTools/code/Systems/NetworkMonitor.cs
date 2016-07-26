@@ -31,8 +31,10 @@ namespace FreshTools
         private bool managerRunning = false;
         private int managerThreadInterval = 1000;
         private NetworkStatus lastNetworkStatus = NetworkStatus.NoIntranet;
-        
+
         private List<NetworkMonitorThread> monitorThreads;
+        private string broadcastSSID = Environment.MachineName;
+        private string broadcastPassword = "not_secure";
 
         private enum NetworkStatus
         {
@@ -44,6 +46,18 @@ namespace FreshTools
         public NetworkMonitor()
         {
             monitorThreads = new List<NetworkMonitorThread>();
+        }
+
+        public void LoadConfig(VariableLibrary vars)
+        {
+            vars.GetVariable("WifiBroadcastSSID", ref broadcastSSID, true);
+            vars.GetVariable("WifiBroadcastPassword", ref broadcastPassword, true);
+        }
+
+        public void UpdateConfigVariables(VariableLibrary vars)
+        {
+            vars.GetVariable("WifiBroadcastSSID", broadcastSSID).SetValue(broadcastSSID);
+            vars.GetVariable("WifiBroadcastPassword", broadcastPassword).SetValue(broadcastPassword);
         }
 
         public void AddMonitor(string site, bool testPing, bool testWebPage)
@@ -147,8 +161,6 @@ namespace FreshTools
         {
             bool cont = true;
             bool valid = false;
-            string ssid = Environment.MachineName;
-            string password = "not_secure";
             const string promptTitle = "Fresh Tools - Start Wifi";
             const string executionNote = "\n\nNote: this will execute: wlan set hostednetwork mode=allow ssid=SSID key=PASSWORD\nFollowed by a stop and start of the hosted network";
 
@@ -156,8 +168,9 @@ namespace FreshTools
             string input = "";
             while (!valid && cont)
             {
-                input = Microsoft.VisualBasic.Interaction.InputBox("Enter an SSID for your wifi network" + executionNote, promptTitle, ssid).Trim();
+                input = Microsoft.VisualBasic.Interaction.InputBox("Enter an SSID for your wifi network" + executionNote, promptTitle, broadcastSSID).Trim();
                 input = input.Trim();
+                cont = input.Length > 0;
                 valid = input.Length >= 3 && input.Length <= 32;
                 valid = valid && input.IndexOf(" ") == -1;
                 valid = valid && input.IndexOf("\t") == -1;
@@ -166,12 +179,13 @@ namespace FreshTools
                 if(!valid && cont)
                     Microsoft.VisualBasic.Interaction.MsgBox("Invalid SSID", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
             }
-            if (cont) ssid = input;
+            if (cont) broadcastSSID = input;
             valid = false;
             while (!valid && cont)
             {
-                input = Microsoft.VisualBasic.Interaction.InputBox("Enter an password to secure your network" + executionNote, promptTitle, password).Trim();
+                input = Microsoft.VisualBasic.Interaction.InputBox("Enter an password to secure your network" + executionNote, promptTitle, broadcastPassword).Trim();
                 valid = input.Length >= 3 && input.Length <= 32;
+                cont = input.Length > 0;
                 valid = valid && input.IndexOf(" ") == -1;
                 valid = valid && input.IndexOf("\t") == -1;
                 valid = valid && input.IndexOf("\n") == -1;
@@ -179,16 +193,16 @@ namespace FreshTools
                 if (!valid && cont)
                     Microsoft.VisualBasic.Interaction.MsgBox("Invalid Password", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
             }
-            if (cont) password = input;
+            if (cont) broadcastPassword = input;
 
             string output, err;
-            FreshArchives.ExecuteCmdCommand("netsh", "wlan set hostednetwork mode=allow ssid=" + ssid + " key=" + password, out output, out err);
+            FreshArchives.ExecuteCmdCommand("netsh", "wlan set hostednetwork mode=allow ssid=" + broadcastSSID + " key=" + broadcastPassword, out output, out err);
             FreshArchives.ExecuteCmdCommand("netsh", "wlan stop hostednetwork", out output, out err);
             FreshArchives.ExecuteCmdCommand("netsh", "wlan start hostednetwork", out output, out err);
 
             if (cont)
             {
-                Microsoft.VisualBasic.Interaction.MsgBox("Started wifi. (SSID:'" + ssid + "' Password:'" + password + "').", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
+                Microsoft.VisualBasic.Interaction.MsgBox("Started wifi. (SSID:'" + broadcastSSID + "' Password:'" + broadcastPassword + "').", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
                 Log.I("Started Wifi");
             }
             else

@@ -23,12 +23,13 @@ namespace FreshTools
         {
             Thread.CurrentThread.Name = "FreshTools Thread";
             Log.Init();
-            LoadConfig();
 
             networkMontitor = new NetworkMonitor();
             networkMontitor.AddMonitor("www.gogle.com", true, true);
             networkMontitor.AddMonitor("www.freshdistraction.com", true, true);
             networkMontitor.NotifyIcon = freshToolsNotifyIcon;
+
+            LoadConfig();
 
             Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
             InitializeNotificationIcon();
@@ -174,7 +175,8 @@ namespace FreshTools
             WindowManager.SnapAltHotKeysEnabled = vars.GetVariable("SnapAltWindowHotKeysEnabled", ref snapAltHotKeysEnabled, true).Boolean;
             bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled_Default;
             WindowManager.MiscHotKeysEnabled = vars.GetVariable("MiscWindowHotKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
-            WindowManager.LoadSnapSizes(settingsFile);
+            WindowManager.LoadSnapSizes(vars);
+            networkMontitor.LoadConfig(vars);
             Log.I("Finisihed loading config");
             //re-write config file in case one didn't exist already
             SaveConfig();
@@ -185,13 +187,16 @@ namespace FreshTools
         /// </summary>
         private void SaveConfig()
         {
-            settingsFile.variables.SetValue("SnapWindowHotKeysEnabled", "" + WindowManager.SnapHotKeysEnabled);
-            settingsFile.variables.SetValue("SnapAltWindowHotKeysEnabled", "" + WindowManager.SnapAltHotKeysEnabled);
-            settingsFile.variables.SetValue("MiscWindowHotKeysEnabled", "" + WindowManager.MiscHotKeysEnabled);
+            VariableLibrary vars = settingsFile.variables;
 
-            WindowManager.SaveSnapSizes(settingsFile);
+            vars.SetValue("SnapWindowHotKeysEnabled", "" + WindowManager.SnapHotKeysEnabled);
+            vars.SetValue("SnapAltWindowHotKeysEnabled", "" + WindowManager.SnapAltHotKeysEnabled);
+            vars.SetValue("MiscWindowHotKeysEnabled", "" + WindowManager.MiscHotKeysEnabled);
+
+            WindowManager.UpdateConfigVariables(vars);
+            networkMontitor.UpdateConfigVariables(vars);
+
             settingsFile.SaveAs(configFilePath);
-
             Log.I("Finisihed updating config");
         }
 
