@@ -34,6 +34,13 @@ namespace FreshTools
         
         private List<NetworkMonitorThread> monitorThreads;
 
+        private enum NetworkStatus
+        {
+            NoIntranet,
+            NoInternet,
+            AllGood,
+        }
+
         public NetworkMonitor()
         {
             monitorThreads = new List<NetworkMonitorThread>();
@@ -112,14 +119,117 @@ namespace FreshTools
                 return NetworkStatus.NoIntranet;
         }
 
+        public void CreateWifiReport(object sender, EventArgs e)
+        {
+            Process p = new Process();
+            p.StartInfo.FileName = "netsh";
+            p.StartInfo.Arguments = "wlan show wlanReport";
+            p.StartInfo.CreateNoWindow = true;
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.RedirectStandardError = true;
+            p.Start();
+            string err = p.StandardError.ReadToEnd();
+            string output = p.StandardOutput.ReadToEnd();
+            p.WaitForExit();
+
+            if (output == "Generating report ... failed, error is 0x5\r\nYou must run this command from a command prompt with administrator privilege. \r\n\r\n")
+            {
+                Microsoft.VisualBasic.Interaction.MsgBox("Report creation failed. Admin access is required.", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, Application.ProductName + "Create Wifi Report");
+            }
+            else
+            {
+                Process.Start(new ProcessStartInfo(@"C:\ProgramData\Microsoft\Windows\WlanReport\wlan-report-latest.html"));
+            }
+        }
+
+        public void StartHostedWifi(object sender, EventArgs e)
+        {
+            bool cont = true;
+            bool valid = false;
+            string ssid = Environment.MachineName;
+            string password = "not_secure";
+            const string promptTitle = "Fresh Tools - Start Wifi";
+            const string executionNote = "\n\nNote: this will execute: wlan set hostednetwork mode=allow ssid=SSID key=PASSWORD\nFollowed by a stop and start of the hosted network";
+
+            //get SSID
+            string input = "";
+            while (!valid && cont)
+            {
+                input = Microsoft.VisualBasic.Interaction.InputBox("Enter an SSID for your wifi network" + executionNote, promptTitle, ssid).Trim();
+                input = input.Trim();
+                valid = input.Length >= 3 && input.Length <= 32;
+                valid = valid && input.IndexOf(" ") == -1;
+                valid = valid && input.IndexOf("\t") == -1;
+                valid = valid && input.IndexOf("\n") == -1;
+
+                if(!valid && cont)
+                    Microsoft.VisualBasic.Interaction.MsgBox("Invalid SSID", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
+            }
+            if (cont) ssid = input;
+            valid = false;
+            while (!valid && cont)
+            {
+                input = Microsoft.VisualBasic.Interaction.InputBox("Enter an password to secure your network" + executionNote, promptTitle, password).Trim();
+                valid = input.Length >= 3 && input.Length <= 32;
+                valid = valid && input.IndexOf(" ") == -1;
+                valid = valid && input.IndexOf("\t") == -1;
+                valid = valid && input.IndexOf("\n") == -1;
+
+                if (!valid && cont)
+                    Microsoft.VisualBasic.Interaction.MsgBox("Invalid Password", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
+            }
+            if (cont) password = input;
+
+            string output, err;
+            FreshArchives.ExecuteCmdCommand("netsh", "wlan set hostednetwork mode=allow ssid=" + ssid + " key=" + password, out output, out err);
+            FreshArchives.ExecuteCmdCommand("netsh", "wlan stop hostednetwork", out output, out err);
+            FreshArchives.ExecuteCmdCommand("netsh", "wlan start hostednetwork", out output, out err);
+
+            if (cont)
+            {
+                Microsoft.VisualBasic.Interaction.MsgBox("Started wifi. (SSID:'" + ssid + "' Password:'" + password + "').", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
+                Log.I("Started Wifi");
+            }
+            else
+            {
+                Microsoft.VisualBasic.Interaction.MsgBox("Wifi not started.", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
+            }
+        }
+
+        public void StopHostedWifi(object sender, EventArgs e)
+        {
+            string output, err;
+            FreshArchives.ExecuteCmdCommand("netsh", "wlan stop hostednetwork", out output, out err);
+            Log.I("Stopped Wifi");
+        }
+
+        public void GetHostedWifiStatus(object sender, EventArgs e)
+        {
+            string output, err;
+            FreshArchives.ExecuteCmdCommand("netsh", "wlan show hostednetwork", out output, out err);
+
+            output = output.Replace(" ", "").ToLower();
+
+            if (output.IndexOf("status:notstarted") != -1)
+            {
+                //not running
+            }
+            if (output.IndexOf("service(wlansvc)isnotrunning.") != -1)
+            {
+                //not supported?
+            }
+
+            Log.I("Started Ipconfig and ping");
+        }
 
         public void RunIPConfig(object sender, EventArgs e)
         {
             const string line_Break = "-------------------------------------------------------------------";
             List<string> commands = new List<string>();
             commands.Add("ipconfig");
-            commands.Add("ping 8.8.8.8");
-            commands.Add("tracert 8.8.8.8");
+            //commands.Add("ping 8.8.8.8");
+            //commands.Add("tracert 8.8.8.8");
             commands.Add("ping -a -t 8.8.8.8");
             string args = "";
             foreach (string c in commands)
@@ -131,7 +241,6 @@ namespace FreshTools
             }
             args = args.Substring(3);//trim first &&s
 
-
             Process p = new Process();
             p.StartInfo.WorkingDirectory = @"C:\";
             p.StartInfo.FileName = "cmd";
@@ -142,7 +251,7 @@ namespace FreshTools
             p.StartInfo.CreateNoWindow = false;
             p.Start();
 
-            Log.I("Started Ipconfig and ping");
+            Log.I("Started ping and IPconfig");
         }
 
         public static void TestCode()
@@ -367,13 +476,6 @@ namespace FreshTools
                 }
             }
             return null;
-        }
-
-        private enum NetworkStatus
-        {
-            NoIntranet,
-            NoInternet,
-            AllGood,
         }
     }
 

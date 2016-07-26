@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Reflection;
@@ -94,6 +95,21 @@ namespace FreshTools
                     File.Delete(dest);
                 File.Move(src, dest);
             }
+        }
+
+        public static void ExecuteCmdCommand(string cmd, string args, out string output, out string err)
+        {
+            Process p = new Process();
+            p.StartInfo.WorkingDirectory = @"C:\";
+            p.StartInfo.FileName = cmd;
+            p.StartInfo.Arguments = args;
+            p.StartInfo.CreateNoWindow = true;
+            p.StartInfo.UseShellExecute = false;
+            p.StartInfo.RedirectStandardOutput = true;
+            p.StartInfo.RedirectStandardError = true;
+            p.Start();
+            err = p.StandardError.ReadToEnd();
+            output = p.StandardOutput.ReadToEnd();
         }
     }
 }

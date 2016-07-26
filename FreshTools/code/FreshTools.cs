@@ -79,10 +79,17 @@ namespace FreshTools
             MenuItem networkMonitorMenu = new MenuItem("Network");
             MenuItem networkMonitorStartMenuItem = new MenuItem("Run Network Monitor");
             networkMonitorStartMenuItem.Checked = networkMontitor.IsRunning;
-            MenuItem networkMonitorIPConfigMenuItem = new MenuItem("IPConfig");
+            MenuItem networkMonitorIPConfigMenuItem = new MenuItem("Ping Internet");
+            MenuItem networkMonitorStartWifiMenuItem = new MenuItem("Start Wifi");
+            MenuItem networkMonitorStopWifiMenuItem = new MenuItem("Stop Wifi");
+            MenuItem networkMonitorWifiReportMenuItem = new MenuItem("Create Wifi Report");
 
             networkMonitorMenu.MenuItems.Add(networkMonitorStartMenuItem);
             networkMonitorMenu.MenuItems.Add(networkMonitorIPConfigMenuItem);
+            networkMonitorMenu.MenuItems.Add(new MenuItem("-"));
+            networkMonitorMenu.MenuItems.Add(networkMonitorStartWifiMenuItem);
+            networkMonitorMenu.MenuItems.Add(networkMonitorStopWifiMenuItem);
+            networkMonitorMenu.MenuItems.Add(networkMonitorWifiReportMenuItem);
 
 
             MenuItem settingsMenu = new MenuItem("Settings");
@@ -117,6 +124,9 @@ namespace FreshTools
             windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
             networkMonitorStartMenuItem.Click += networkMontitor.ToggleMonitoring;
             networkMonitorIPConfigMenuItem.Click += networkMontitor.RunIPConfig;
+            networkMonitorStartWifiMenuItem.Click += networkMontitor.StartHostedWifi;
+            networkMonitorStopWifiMenuItem.Click += networkMontitor.StopHostedWifi;
+            networkMonitorWifiReportMenuItem.Click += networkMontitor.CreateWifiReport;
             startupEnabledMenuItem.Click += startupEnabledMenuItem_Click;
             launchAsAdminMenuItem.Click += launchAsAdminMenuItem_Click;
             settingsDirMenuItem.Click += settingsDirMenuItem_Click;
