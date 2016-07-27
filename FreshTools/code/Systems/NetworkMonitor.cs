@@ -175,6 +175,8 @@ namespace FreshTools
                 valid = valid && input.IndexOf(" ") == -1;
                 valid = valid && input.IndexOf("\t") == -1;
                 valid = valid && input.IndexOf("\n") == -1;
+                valid = valid && input.IndexOf("\"") == -1;
+                valid = valid && input.IndexOf("\'") == -1;
 
                 if(!valid && cont)
                     Microsoft.VisualBasic.Interaction.MsgBox("Invalid SSID", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
@@ -189,6 +191,8 @@ namespace FreshTools
                 valid = valid && input.IndexOf(" ") == -1;
                 valid = valid && input.IndexOf("\t") == -1;
                 valid = valid && input.IndexOf("\n") == -1;
+                valid = valid && input.IndexOf("\"") == -1;
+                valid = valid && input.IndexOf("\'") == -1;
 
                 if (!valid && cont)
                     Microsoft.VisualBasic.Interaction.MsgBox("Invalid Password", Microsoft.VisualBasic.MsgBoxStyle.OkOnly, promptTitle);
@@ -218,24 +222,42 @@ namespace FreshTools
             Log.I("Stopped Wifi");
         }
 
-        public void GetHostedWifiStatus(object sender, EventArgs e)
+        /// <summary>
+        /// Returns the status, ssid and password setup ti broadcast wifi from this machine.
+        /// status(-1:not available, 0:Off, 1:Broadcasting).
+        /// </summary>
+        /// <param name="ssid"></param>
+        /// <param name="pass"></param>
+        /// <param name="status"></param>
+        public void GetHostedWifiInfo(out string ssid, out string pass, out int status)
         {
+            ssid = "";
+            pass = "";
             string output, err;
             FreshArchives.ExecuteCmdCommand("netsh", "wlan show hostednetwork", out output, out err);
+            //output = output.Replace(" ", "");
 
-            output = output.Replace(" ", "").ToLower();
-
-            if (output.IndexOf("status:notstarted") != -1)
+            if (output.IndexOf("Service (wlansvc) is not running.") != -1)
+                status = -1;//not supported?
+            else
             {
-                //not running
-            }
-            if (output.IndexOf("service(wlansvc)isnotrunning.") != -1)
-            {
-                //not supported?
-            }
+                if (output.IndexOf("\r\n    Status                 : Not started") != -1)
+                    status = 0; //not running
+                else
+                    status = 1; //actively running
 
-            Log.I("Started Ipconfig and ping");
+                int start = output.IndexOf("SSID name");
+                start = output.IndexOf('"', start) + 1;
+                ssid = output.Substring(start, output.IndexOf('"', start) - start);
+
+                FreshArchives.ExecuteCmdCommand("netsh", "wlan show hostednetwork setting=security", out output, out err);
+
+                start = output.IndexOf("User security key");
+                start = output.IndexOf(':', start) + 2;
+                pass = output.Substring(start, output.IndexOf('\r', start) - start);
+            }
         }
+        
 
         public void RunIPConfig(object sender, EventArgs e)
         {

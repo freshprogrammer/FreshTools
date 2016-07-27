@@ -185,7 +185,7 @@ namespace FreshTools
         /// <summary>
         /// Make sure config variables that can be changed are updated in config file
         /// </summary>
-        private void SaveConfig()
+        public void SaveConfig()
         {
             VariableLibrary vars = settingsFile.variables;
 
