@@ -24,16 +24,17 @@ namespace FreshTools
             Thread.CurrentThread.Name = "FreshTools Thread";
             Log.Init();
 
+            //this needs to exist before config is loaded
             networkMontitor = new NetworkMonitor();
             networkMontitor.AddMonitor("www.gogle.com", true, true);
             networkMontitor.AddMonitor("www.freshdistraction.com", true, true);
-            networkMontitor.NotifyIcon = freshToolsNotifyIcon;
 
             LoadConfig();
 
             Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
             InitializeNotificationIcon();
             freshToolsNotifyIcon.Visible = true;
+            networkMontitor.NotificationIcon = freshToolsNotifyIcon;
 
             RegisterHotkeys();
 

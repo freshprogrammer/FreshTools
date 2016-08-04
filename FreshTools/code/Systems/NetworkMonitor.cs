@@ -7,6 +7,8 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Reflection;
+using System.ComponentModel;
 
 namespace FreshTools
 {
@@ -25,7 +27,11 @@ namespace FreshTools
 
         public bool IsRunning { get { return managerRunning; } set {} }
 
-        public NotifyIcon NotifyIcon;
+        public NotifyIcon NotificationIcon;
+        private EventHandler lastBallonClickEventHandler;
+        private const int NOTIFY_BALOON_SHORT_TIMEOUT = 1000;
+        private const int NOTIFY_BALOON_LONG_TIMEOUT = 10000;
+        private const string NOTIFY_BALOON_TITLE = "Network Monitor";
         
         private Thread managerThread;
         private bool managerRunning = false;
@@ -75,11 +81,27 @@ namespace FreshTools
             i.Checked = managerRunning;
         }
 
+        private void SetBalloonTipClickedEvent(EventHandler h)
+        {
+            if (NotificationIcon != null)
+            {
+                NotificationIcon.BalloonTipClicked -= lastBallonClickEventHandler;
+                NotificationIcon.BalloonTipClicked += h;
+                lastBallonClickEventHandler = h;
+            }
+        }
+
         public void StartMonitoring()
         {
             managerThread = new Thread(new ThreadStart(ManagerRun));
-            managerThread.Name = "Networkonitor Manager";
+            managerThread.Name = "Network Monitor Manager";
             managerThread.Start();
+
+            if (NotificationIcon != null)
+            {
+                SetBalloonTipClickedEvent(null);
+                NotificationIcon.ShowBalloonTip(NOTIFY_BALOON_SHORT_TIMEOUT, NOTIFY_BALOON_TITLE, "Network Monitor Started", ToolTipIcon.None);
+            }
 
             foreach (NetworkMonitorThread t in monitorThreads)
             {
@@ -90,6 +112,12 @@ namespace FreshTools
 
         public void StopMonitoring()
         {
+            if (NotificationIcon != null)
+            {
+                SetBalloonTipClickedEvent(null);
+                NotificationIcon.ShowBalloonTip(NOTIFY_BALOON_SHORT_TIMEOUT, NOTIFY_BALOON_TITLE, "Network Monitor Stopped", ToolTipIcon.Info);
+            }
+
             managerRunning = false;
             managerThread = null;
             foreach (NetworkMonitorThread t in monitorThreads)
@@ -102,13 +130,27 @@ namespace FreshTools
         private void ManagerRun()
         {
             managerRunning = true;
+            NetworkStatus currentNetStat = GetNetworkstatus();
+            lastNetworkStatus = currentNetStat;
             while (managerRunning)
             {
-                NetworkStatus currentNetStat = GetNetworkstatus();
+                currentNetStat = GetNetworkstatus();
                 if (currentNetStat != lastNetworkStatus)
                 {
                     //status chaged
-                    Log.W("Network status changed - now " + currentNetStat, LOG_TAG);
+                    if (currentNetStat == NetworkStatus.AllGood)
+                    {
+                        if (NotificationIcon != null) NotificationIcon.ShowBalloonTip(NOTIFY_BALOON_LONG_TIMEOUT, NOTIFY_BALOON_TITLE, "Internet is back up", ToolTipIcon.Info);
+                    }
+                    else if (currentNetStat == NetworkStatus.NoInternet)
+                    {
+                        if (NotificationIcon != null) NotificationIcon.ShowBalloonTip(NOTIFY_BALOON_LONG_TIMEOUT, NOTIFY_BALOON_TITLE, "Lost Internet connection (" + InternetURL + ")", ToolTipIcon.Error);
+                    }
+                    else if (currentNetStat == NetworkStatus.NoIntranet)
+                    {
+                        if (NotificationIcon != null) NotificationIcon.ShowBalloonTip(NOTIFY_BALOON_LONG_TIMEOUT, NOTIFY_BALOON_TITLE, "Lost local intranet connection (" + GetDefaultGateway() + ")", ToolTipIcon.Error);
+                    }
+                    Log.W("Network status changed - now:" + currentNetStat, LOG_TAG);
                 }
                 lastNetworkStatus = currentNetStat;
 

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 
 namespace FreshTools
 {
-    class IdleMonitor
+    public class IdleMonitor
     {
         private TimeSpan idleTime;
         private DateTime lastCheckTime;
