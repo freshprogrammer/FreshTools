@@ -56,17 +56,15 @@ namespace FreshTools
             windowManagerMiscHotKeysEnabledMenuItem.Checked = WindowManager.MiscHotKeysEnabled;
 
             MenuItem windowManagerMenu = new MenuItem("Window Manager");
-            MenuItem windowManagerSaveWindowsMenuItem = new MenuItem("Save All Window Positions");
-            MenuItem windowManagerRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions");
-            MenuItem windowManagerUndoRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions (undo)");
+            MenuItem windowManagerSaveLayoutMenuItem = new MenuItem("Save Window Layout");
+            MenuItem windowManagerRestoreLayoutMenuItem = new MenuItem("Restore Window Layout");
 
             windowManagerMenu.MenuItems.Add(windowManagerSnapHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerSnapAltHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerMiscHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(new MenuItem("-"));
-            windowManagerMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
-            windowManagerMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
-            windowManagerMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerSaveLayoutMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerRestoreLayoutMenuItem);
 
             MenuItem settingsMenu = new MenuItem("Settings");
             MenuItem settingsDirMenuItem = new MenuItem("Open AppData");
@@ -95,9 +93,8 @@ namespace FreshTools
             windowManagerSnapHotKeysEnabledMenuItem.Click += windowManagerSnapHotKeysEnabledMenuItem_Click;
             windowManagerSnapAltHotKeysEnabledMenuItem.Click += windowManagerSnapAltHotKeysEnabledMenuItem_Click;
             windowManagerMiscHotKeysEnabledMenuItem.Click += windowManagerMiscHotKeysEnabledMenuItem_Click;
-            windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
-            windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
-            windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
+            windowManagerSaveLayoutMenuItem.Click += WindowManager.SaveLayout0;
+            windowManagerRestoreLayoutMenuItem.Click += WindowManager.RestoreLayout0;
             startupEnabledMenuItem.Click += startupEnabledMenuItem_Click;
             launchAsAdminMenuItem.Click += launchAsAdminMenuItem_Click;
             settingsDirMenuItem.Click += settingsDirMenuItem_Click;
