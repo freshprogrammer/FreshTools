@@ -22,6 +22,7 @@ namespace FreshTools
             Thread.CurrentThread.Name = "FreshTools Thread";
             Log.Init();
             LoadConfig();
+			UpdateRegistryForStartup();
 
             Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
             InitializeNotificationIcon();
@@ -238,6 +239,27 @@ namespace FreshTools
         }
         #endregion
 
+		public static void UpdateRegistryForStartup()
+        {//should check for any existing key and delete if the name is outdated and create a new one - especialy since this app kills other processes with the same name
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+				bool partOfStartup = false;
+				
+				//look for any relevant key values
+                if(key.GetValue(Assembly.GetExecutingAssembly().GetName().Name) != null)
+					partOfStartup = true;
+				
+				//should delete old key values here
+                //key.DeleteValue(Assembly.GetExecutingAssembly().GetName().Name, false);
+				
+				//update key value to current path
+				if(partOfStartup)
+				{
+					key.SetValue(Assembly.GetExecutingAssembly().GetName().Name, "\"" + Application.ExecutablePath + "\"");
+				}
+            }
+        }
+		
         private void OnApplicationExit(object sender, EventArgs args)
         {
             //cleanup
