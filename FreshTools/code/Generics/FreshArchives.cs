@@ -47,7 +47,7 @@ namespace FreshTools
 
         public static bool IsApplicationInStartup()
         {
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", false))
             {
                 var val = key.GetValue(Assembly.GetExecutingAssembly().GetName().Name);
                 return val != null;
