@@ -361,13 +361,18 @@ namespace FreshTools
         private const int SWP_NOZORDER = 0x0004;
         private const int SWP_NOACTIVATE = 0x0010;
         private const int SWP_SHOWWINDOW = 0x0040;
-        //SetWindowPos zlayer flags 
+        //SetWindowPos zlayer flags
         private const short HWND_BOTTOM = 1;
         private const short HWND_NOTOPMOST = -2;
         private const short HWND_TOP = 0;
         private const short HWND_TOPMOST = -1;
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
         public static extern bool SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
+
+        //ShowWindow flags
+        private const short SW_SHOWNORMAL = 1;
+        [DllImport("user32.dll", EntryPoint = "ShowWindow")]
+        public static extern bool ShowWindow(IntPtr hWnd, int wFlags);
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr GetShellWindow();
@@ -519,6 +524,7 @@ namespace FreshTools
                     newHeight += resizeOffset.Y;
                 }
 
+                ShowWindow(handle, SW_SHOWNORMAL);
                 SetWindowPos(handle, HWND_TOP, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_SHOWWINDOW);
             }
         }
