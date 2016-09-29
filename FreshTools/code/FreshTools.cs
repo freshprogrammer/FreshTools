@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Drawing;
 using System.Reflection;
 using System.Threading;
@@ -212,7 +213,7 @@ namespace FreshTools
         {
             Log.I("Relaunching as Admin");
             Process p = new Process();
-            p.StartInfo.FileName = Application.ExecutablePath;
+            p.StartInfo.FileName = Assembly.GetEntryAssembly().Location;
             p.StartInfo.Verb = "runas";
             p.Start();
             //this process will be killed by the single instance check in the new process
@@ -255,7 +256,7 @@ namespace FreshTools
 				//update key value to current path
 				if(partOfStartup)
 				{
-					key.SetValue(Assembly.GetExecutingAssembly().GetName().Name, "\"" + Application.ExecutablePath + "\"");
+					key.SetValue(Assembly.GetExecutingAssembly().GetName().Name, "\"" + Assembly.GetEntryAssembly().Location + "\"");
 				}
             }
         }
