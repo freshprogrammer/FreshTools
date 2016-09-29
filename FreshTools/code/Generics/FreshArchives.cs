@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Drawing;
+using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using Microsoft.Win32;
-using System.Drawing;
 
 namespace FreshTools
 {
@@ -32,7 +33,7 @@ namespace FreshTools
         {
             using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
             {
-                key.SetValue(Assembly.GetExecutingAssembly().GetName().Name, "\"" + Application.ExecutablePath + "\"");
+                key.SetValue(Assembly.GetExecutingAssembly().GetName().Name, "\"" + Assembly.GetEntryAssembly().Location + "\"");
             }
         }
 
@@ -46,7 +47,7 @@ namespace FreshTools
 
         public static bool IsApplicationInStartup()
         {
-            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", false))
             {
                 var val = key.GetValue(Assembly.GetExecutingAssembly().GetName().Name);
                 return val != null;
@@ -54,23 +55,45 @@ namespace FreshTools
         }
 
         /// <summary>
-        /// Parses "X,Y,Width,Hight" into RectangleF 
+        /// Parses "X,Y,Width,Hight" into RectangleF. Returns zero rectangle if failure
         /// </summary>
         /// <param name="input"></param>
         /// <returns></returns>
         public static RectangleF ParseRectangleF(string input)
         {
-            try
+            RectangleF result = RectangleF.Empty;
+            string[] vals = input.Split(',');
+            float x = 0, y = 0, w = 0, h = 0;
+            bool valid = true;
+            valid = valid && float.TryParse(vals[0], out x);
+            valid = valid && float.TryParse(vals[1], out y);
+            valid = valid && float.TryParse(vals[2], out w);
+            valid = valid && float.TryParse(vals[3], out h);
+
+            if (valid)
             {
-                RectangleF result = RectangleF.Empty;
-                string[] vals = input.Split(',');
-                result.X = float.Parse(vals[0]);
-                result.Y = float.Parse(vals[1]);
-                result.Width = float.Parse(vals[2]);
-                result.Height = float.Parse(vals[3]);
-                return result;
+                result.X = x;
+                result.Y = y;
+                result.Width = w;
+                result.Height = h;
             }
-            catch (Exception) { return RectangleF.Empty; }
+            return result;
+        }
+
+        /// <summary>
+        /// Move the file to new destination, deleting any file that might exist there
+        /// </summary>
+        /// <param name="src">current full path to file</param>
+        /// <param name="dest">full path to new file</param>
+        public static void MoveFileOverwrite(string src, string dest)
+        {
+            if (File.Exists(src))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(dest));
+                if (File.Exists(dest))
+                    File.Delete(dest);
+                File.Move(src, dest);
+            }
         }
     }
 }

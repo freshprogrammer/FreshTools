@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Drawing;
 using System.Reflection;
 using System.Threading;
@@ -22,6 +23,7 @@ namespace FreshTools
             Thread.CurrentThread.Name = "FreshTools Thread";
             Log.Init();
             LoadConfig();
+			UpdateRegistryForStartup();
 
             Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
             InitializeNotificationIcon();
@@ -56,17 +58,15 @@ namespace FreshTools
             windowManagerMiscHotKeysEnabledMenuItem.Checked = WindowManager.MiscHotKeysEnabled;
 
             MenuItem windowManagerMenu = new MenuItem("Window Manager");
-            MenuItem windowManagerSaveWindowsMenuItem = new MenuItem("Save All Window Positions");
-            MenuItem windowManagerRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions");
-            MenuItem windowManagerUndoRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions (undo)");
+            MenuItem windowManagerSaveLayoutMenuItem = new MenuItem("Save Window Layout");
+            MenuItem windowManagerRestoreLayoutMenuItem = new MenuItem("Restore Window Layout");
 
             windowManagerMenu.MenuItems.Add(windowManagerSnapHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerSnapAltHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerMiscHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(new MenuItem("-"));
-            windowManagerMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
-            windowManagerMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
-            windowManagerMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerSaveLayoutMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerRestoreLayoutMenuItem);
 
             MenuItem settingsMenu = new MenuItem("Settings");
             MenuItem settingsDirMenuItem = new MenuItem("Open AppData");
@@ -95,9 +95,8 @@ namespace FreshTools
             windowManagerSnapHotKeysEnabledMenuItem.Click += windowManagerSnapHotKeysEnabledMenuItem_Click;
             windowManagerSnapAltHotKeysEnabledMenuItem.Click += windowManagerSnapAltHotKeysEnabledMenuItem_Click;
             windowManagerMiscHotKeysEnabledMenuItem.Click += windowManagerMiscHotKeysEnabledMenuItem_Click;
-            windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
-            windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
-            windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
+            windowManagerSaveLayoutMenuItem.Click += WindowManager.SaveLayout0;
+            windowManagerRestoreLayoutMenuItem.Click += WindowManager.RestoreLayout0;
             startupEnabledMenuItem.Click += startupEnabledMenuItem_Click;
             launchAsAdminMenuItem.Click += launchAsAdminMenuItem_Click;
             settingsDirMenuItem.Click += settingsDirMenuItem_Click;
@@ -130,27 +129,31 @@ namespace FreshTools
             }
         }
 
+        /// <summary>
+        /// Load variables from config file and update real time settings
+        /// </summary>
         public void LoadConfig()
         {
             settingsFile = new VariablesFile(configFilePath, null, false);
             VariableLibrary vars = settingsFile.variables;
 
             //load variables
-            bool snapHotKeysEnabled = WindowManager.SnapHotKeysEnabled;
+            bool snapHotKeysEnabled = WindowManager.SnapHotKeysEnabled_Default;
             WindowManager.SnapHotKeysEnabled = vars.GetVariable("SnapWindowHotKeysEnabled", ref snapHotKeysEnabled, true).Boolean;
-            bool snapAltHotKeysEnabled = WindowManager.SnapAltHotKeysEnabled;
+            bool snapAltHotKeysEnabled = WindowManager.SnapAltHotKeysEnabled_Default;
             WindowManager.SnapAltHotKeysEnabled = vars.GetVariable("SnapAltWindowHotKeysEnabled", ref snapAltHotKeysEnabled, true).Boolean;
-            bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled;
+            bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled_Default;
             WindowManager.MiscHotKeysEnabled = vars.GetVariable("MiscWindowHotKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
             WindowManager.LoadSnapSizes(settingsFile);
-
             Log.I("Finisihed loading config");
+            //re-write config file in case one didn't exist already
+            SaveConfig();
         }
 
         /// <summary>
         /// Make sure config variables that can be changed are updated in config file
         /// </summary>
-        private void SaveVariables()
+        private void SaveConfig()
         {
             settingsFile.variables.SetValue("SnapWindowHotKeysEnabled", "" + WindowManager.SnapHotKeysEnabled);
             settingsFile.variables.SetValue("SnapAltWindowHotKeysEnabled", "" + WindowManager.SnapAltHotKeysEnabled);
@@ -158,6 +161,8 @@ namespace FreshTools
 
             WindowManager.SaveSnapSizes(settingsFile);
             settingsFile.SaveAs(configFilePath);
+
+            Log.I("Finisihed updating config");
         }
 
         #region Context Menu Event Handlers
@@ -174,7 +179,7 @@ namespace FreshTools
             MenuItem i = (MenuItem)sender;
             i.Checked = !i.Checked;
             WindowManager.SnapHotKeysEnabled = i.Checked;
-            SaveVariables();
+            SaveConfig();
         }
 
         private void windowManagerSnapAltHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
@@ -182,7 +187,7 @@ namespace FreshTools
             MenuItem i = (MenuItem)sender;
             i.Checked = !i.Checked;
             WindowManager.SnapAltHotKeysEnabled = i.Checked;
-            SaveVariables();
+            SaveConfig();
         }
 
         private void windowManagerMiscHotKeysEnabledMenuItem_Click(object sender, EventArgs e)
@@ -190,7 +195,7 @@ namespace FreshTools
             MenuItem i = (MenuItem)sender;
             i.Checked = !i.Checked;
             WindowManager.MiscHotKeysEnabled = i.Checked;
-            SaveVariables();
+            SaveConfig();
         }
 
         private void startupEnabledMenuItem_Click(object sender, EventArgs e)
@@ -201,12 +206,14 @@ namespace FreshTools
             else
                 FreshArchives.AddApplicationToStartup();
             i.Checked = FreshArchives.IsApplicationInStartup();
+            Log.I("Finisihed updating config");
         }
 
         private void launchAsAdminMenuItem_Click(object sender, EventArgs e)
         {
+            Log.I("Relaunching as Admin");
             Process p = new Process();
-            p.StartInfo.FileName = Application.ExecutablePath;
+            p.StartInfo.FileName = Assembly.GetEntryAssembly().Location;
             p.StartInfo.Verb = "runas";
             p.Start();
             //this process will be killed by the single instance check in the new process
@@ -228,11 +235,32 @@ namespace FreshTools
         {
             Log.I("quitMenuItem_Click()");
             freshToolsNotifyIcon.Dispose();
-            SaveVariables();
+            SaveConfig();
             Application.Exit();
         }
         #endregion
 
+		public static void UpdateRegistryForStartup()
+        {//should check for any existing key and delete if the name is outdated and create a new one - especialy since this app kills other processes with the same name
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+				bool partOfStartup = false;
+				
+				//look for any relevant key values
+                if(key.GetValue(Assembly.GetExecutingAssembly().GetName().Name) != null)
+					partOfStartup = true;
+				
+				//should delete old key values here
+                //key.DeleteValue(Assembly.GetExecutingAssembly().GetName().Name, false);
+				
+				//update key value to current path
+				if(partOfStartup)
+				{
+					key.SetValue(Assembly.GetExecutingAssembly().GetName().Name, "\"" + Assembly.GetEntryAssembly().Location + "\"");
+				}
+            }
+        }
+		
         private void OnApplicationExit(object sender, EventArgs args)
         {
             //cleanup

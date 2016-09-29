@@ -100,57 +100,27 @@ namespace FreshTools
 
         public static VariableType DetermineType(string val)
         {
-            VariableType result = 0;
+            bool b;
+            int i;
+            float f;
+            double d;
 
-            if (String.Compare(val.Trim(), "true", true) == 0 || String.Compare(val.Trim(), "false", true) == 0)
-            {
-                result = VariableType.Boolean;
-            }
-            else
-            {
-                try
-                {
-                    if (val.Trim().Equals("" + int.Parse(val)))
-                    {
-                        result = VariableType.Int;
-                    }
-                }
-                catch (FormatException)
-                {
-                    try
-                    {
-                        if (val.Trim().Equals("" + float.Parse(val)))
-                        {
-                            result = VariableType.Float;
-                        }
-                    }
-                    catch (FormatException)
-                    {
-                        try
-                        {
-                            if (val.Trim().Equals("" + double.Parse(val)))
-                            {
-                                result = VariableType.Double;
-                            }
-                        }
-                        catch (FormatException)
-                        {
-                            string trimmed = val.Trim();
-                            if (trimmed.Length>0 && trimmed[0] == '\"' && trimmed[trimmed.Length - 1] == '\"')
-                            {
-                                result = VariableType.String;
-                            }
-                            else
-                            {
-                                result = VariableType.Unknown;
-                            }
-                        }
-                    }
+            val = val.Trim();
 
-                }
-            }
+            if (val.Length <= 0)
+                return VariableType.Unknown;
+            else if (bool.TryParse(val, out b))
+                return VariableType.Boolean;
+            else if (int.TryParse(val, out i))
+                return VariableType.Int;
+            else if (float.TryParse(val, out f))
+                return VariableType.Float;
+            else if (double.TryParse(val, out d))
+                return VariableType.Double;
+            else if (val[0] == '\"' && val[val.Length - 1] == '\"')//start and end eith quotes
+                return VariableType.String;
 
-            return result;
+            return VariableType.Unknown;
         }
 
         public Variable(string name, string defaultValue)
@@ -213,7 +183,7 @@ namespace FreshTools
             }
         }
 
-        public bool Boolean 
+        public bool Boolean
         { 
             get 
             {
