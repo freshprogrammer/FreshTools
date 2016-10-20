@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
 using System.Drawing;
 using System.Net;
 using System.Reflection;
@@ -30,6 +31,7 @@ namespace FreshTools
             networkMontitor.AddMonitor("www.freshdistraction.com", true, true);
 
             LoadConfig();
+			UpdateRegistryForStartup();
 
             Application.ApplicationExit += new EventHandler(this.OnApplicationExit);
             InitializeNotificationIcon();
@@ -65,18 +67,16 @@ namespace FreshTools
             MenuItem windowManagerMiscHotKeysEnabledMenuItem = new MenuItem("Window General Hotkeys");
             windowManagerMiscHotKeysEnabledMenuItem.Checked = WindowManager.MiscHotKeysEnabled;
 
-            MenuItem windowManagerMenu = new MenuItem("Windows");
-            MenuItem windowManagerSaveWindowsMenuItem = new MenuItem("Save All Window Positions");
-            MenuItem windowManagerRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions");
-            MenuItem windowManagerUndoRestoreWindowsMenuItem = new MenuItem("Restore All Window Positions (undo)");
+            MenuItem windowManagerMenu = new MenuItem("Window Manager");
+            MenuItem windowManagerSaveLayoutMenuItem = new MenuItem("Save Window Layout");
+            MenuItem windowManagerRestoreLayoutMenuItem = new MenuItem("Restore Window Layout");
 
             windowManagerMenu.MenuItems.Add(windowManagerSnapHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerSnapAltHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerMiscHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(new MenuItem("-"));
-            windowManagerMenu.MenuItems.Add(windowManagerSaveWindowsMenuItem);
-            windowManagerMenu.MenuItems.Add(windowManagerRestoreWindowsMenuItem);
-            windowManagerMenu.MenuItems.Add(windowManagerUndoRestoreWindowsMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerSaveLayoutMenuItem);
+            windowManagerMenu.MenuItems.Add(windowManagerRestoreLayoutMenuItem);
 
             MenuItem networkMonitorMenu = new MenuItem("Network");
             MenuItem networkMonitorStartMenuItem = new MenuItem("Run Network Monitor");
@@ -121,9 +121,8 @@ namespace FreshTools
             windowManagerSnapHotKeysEnabledMenuItem.Click += windowManagerSnapHotKeysEnabledMenuItem_Click;
             windowManagerSnapAltHotKeysEnabledMenuItem.Click += windowManagerSnapAltHotKeysEnabledMenuItem_Click;
             windowManagerMiscHotKeysEnabledMenuItem.Click += windowManagerMiscHotKeysEnabledMenuItem_Click;
-            windowManagerSaveWindowsMenuItem.Click += WindowManager.SaveAllWindowPositions;
-            windowManagerRestoreWindowsMenuItem.Click += WindowManager.RestoreAllWindowPositions;
-            windowManagerUndoRestoreWindowsMenuItem.Click += WindowManager.UndoRestoreAllWindowPositions;
+            windowManagerSaveLayoutMenuItem.Click += WindowManager.SaveLayout0;
+            windowManagerRestoreLayoutMenuItem.Click += WindowManager.RestoreLayout0;
             networkMonitorStartMenuItem.Click += networkMontitor.ToggleMonitoring;
             networkMonitorIPConfigMenuItem.Click += networkMontitor.RunIPConfig;
             networkMonitorStartWifiMenuItem.Click += networkMontitor.StartHostedWifi;
@@ -249,7 +248,7 @@ namespace FreshTools
         {
             Log.I("Relaunching as Admin");
             Process p = new Process();
-            p.StartInfo.FileName = Application.ExecutablePath;
+            p.StartInfo.FileName = Assembly.GetEntryAssembly().Location;
             p.StartInfo.Verb = "runas";
             p.Start();
             //this process will be killed by the single instance check in the new process
@@ -276,6 +275,27 @@ namespace FreshTools
         }
         #endregion
 
+		public static void UpdateRegistryForStartup()
+        {//should check for any existing key and delete if the name is outdated and create a new one - especialy since this app kills other processes with the same name
+            using (RegistryKey key = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true))
+            {
+				bool partOfStartup = false;
+				
+				//look for any relevant key values
+                if(key.GetValue(Assembly.GetExecutingAssembly().GetName().Name) != null)
+					partOfStartup = true;
+				
+				//should delete old key values here
+                //key.DeleteValue(Assembly.GetExecutingAssembly().GetName().Name, false);
+				
+				//update key value to current path
+				if(partOfStartup)
+				{
+					key.SetValue(Assembly.GetExecutingAssembly().GetName().Name, "\"" + Assembly.GetEntryAssembly().Location + "\"");
+				}
+            }
+        }
+		
         private void OnApplicationExit(object sender, EventArgs args)
         {
             //cleanup

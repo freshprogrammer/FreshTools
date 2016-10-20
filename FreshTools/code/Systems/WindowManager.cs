@@ -30,9 +30,8 @@ namespace FreshTools
         private static bool miscHotKeysEnabled = false;
 
         //window info for saving and restoring window possitions
-        private static DateTime windowInfoSaveTime = DateTime.MinValue;
-        private static List<WindowInfo> windowInfos = new List<WindowInfo>();
-        private static List<WindowInfo> windowInfosBackup = new List<WindowInfo>();
+		private const int LAYOUT_COUNT = 4;//menu and hotkeys 1-3
+        private static Layout[] layouts = new Layout[LAYOUT_COUNT];
 
         //snap region sizes
         const int SnapSizeMaxCount = 9;
@@ -54,6 +53,9 @@ namespace FreshTools
         #region Setup and teardown
         static WindowManager()
         {
+			for(int i=0;i<LAYOUT_COUNT;i++)
+				layouts[i] = new Layout();
+			
             if (!FreshArchives.IsWindows10())
             {
                 positionOffset = new Point(0, 0);
@@ -221,6 +223,12 @@ namespace FreshTools
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7, MoveActiveWindowToTopLeft);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8, MoveActiveWindowToTop);
                 HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9, MoveActiveWindowToTopRight);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.D1, RestoreLayout1);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.D2, RestoreLayout2);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.D3, RestoreLayout3);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.D1, SaveLayout1);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.D2, SaveLayout2);
+                HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.D3, SaveLayout3);
             }
         }
 
@@ -240,6 +248,12 @@ namespace FreshTools
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad7);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad8);
                 HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.NumPad9);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.D1);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.D2);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.D3);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.D1);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.D2);
+                HotKeyManager.UnregisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), Keys.D3);
             }
         }
 
@@ -347,13 +361,18 @@ namespace FreshTools
         private const int SWP_NOZORDER = 0x0004;
         private const int SWP_NOACTIVATE = 0x0010;
         private const int SWP_SHOWWINDOW = 0x0040;
-        //SetWindowPos zlayer flags 
+        //SetWindowPos zlayer flags
         private const short HWND_BOTTOM = 1;
         private const short HWND_NOTOPMOST = -2;
         private const short HWND_TOP = 0;
         private const short HWND_TOPMOST = -1;
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
         public static extern bool SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
+
+        //ShowWindow flags
+        private const short SW_SHOWNORMAL = 1;
+        [DllImport("user32.dll", EntryPoint = "ShowWindow")]
+        public static extern bool ShowWindow(IntPtr hWnd, int wFlags);
 
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         private static extern IntPtr GetShellWindow();
@@ -505,6 +524,7 @@ namespace FreshTools
                     newHeight += resizeOffset.Y;
                 }
 
+                ShowWindow(handle, SW_SHOWNORMAL);
                 SetWindowPos(handle, HWND_TOP, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_SHOWWINDOW);
             }
         }
@@ -705,6 +725,36 @@ namespace FreshTools
         {
             SetWindowTransparancy(-1);
         }
+
+        public static void SaveLayout1(object sender = null, HotKeyEventArgs e = null)
+        {
+            SaveAllWindowPositions(1);
+        }
+
+        public static void RestoreLayout1(object sender = null, HotKeyEventArgs e = null)
+        {
+            RestoreAllWindowPositions(1);
+        }
+
+        public static void SaveLayout2(object sender = null, HotKeyEventArgs e = null)
+        {
+            SaveAllWindowPositions(2);
+        }
+
+        public static void RestoreLayout2(object sender = null, HotKeyEventArgs e = null)
+        {
+            RestoreAllWindowPositions(2);
+        }
+
+        public static void SaveLayout3(object sender = null, HotKeyEventArgs e = null)
+        {
+            SaveAllWindowPositions(3);
+        }
+
+        public static void RestoreLayout3(object sender = null, HotKeyEventArgs e = null)
+        {
+            RestoreAllWindowPositions(3);
+        }
         #endregion
 
         #region Calculate Screen(s) info and Generics
@@ -889,51 +939,34 @@ namespace FreshTools
         #endregion
 
         #region Save & Restore all window positions
-        public static void SaveAllWindowPositions(object sender = null, EventArgs e = null)
+        public static void SaveLayout0(object sender = null, EventArgs e = null)
         {
-            SaveAllWindowPositions(ref windowInfos);
+			//called from menu - save to layout 0
+            SaveAllWindowPositions(0);
         }
 
-        public static void RestoreAllWindowPositions(object sender = null, EventArgs e = null)
+        public static void RestoreLayout0(object sender = null, EventArgs e = null)
         {
-            RestoreAllWindowPositions(true);
+			//called from menu - save to layout 0
+            RestoreAllWindowPositions(0);
         }
 
-        public static void UndoRestoreAllWindowPositions(object sender = null, EventArgs e = null)
+        public static void SaveAllWindowPositions(int saveSlot)
         {
-            RestoreAllWindowPositions(false);
+			if(saveSlot<LAYOUT_COUNT)
+			{
+				layouts[saveSlot].Capture();
+				Log.I("Saved " + layouts[saveSlot].WindowCount + " window positions to slot#"+saveSlot);
+			}
         }
 
-        private static void SaveAllWindowPositions(ref List<WindowInfo> saveInfos)
+        public static void RestoreAllWindowPositions(int saveSlot)
         {
-            var windows = FindAllVisibleWindows();
-            saveInfos.Clear();
-
-            foreach (IntPtr w in windows)
-            {
-                WindowInfo wInfo = new WindowInfo(w);
-                saveInfos.Add(wInfo);
-            }
-            Log.I("Saved " + saveInfos.Count + " window positions");
-        }
-
-        private static void RestoreAllWindowPositions(bool normalRestore)
-        {
-            if (normalRestore)
-                SaveAllWindowPositions(ref windowInfosBackup);
-
-            var restoreInfos = normalRestore ? windowInfos : windowInfosBackup;
-            int successCount = 0;
-            foreach (WindowInfo i in restoreInfos)
-            {
-                if (i.RestorePosition())
-                    successCount++;
-            }
-
-            if (normalRestore)
-                Log.I("Restored " + successCount + "/" + restoreInfos.Count + " window positions");
-            else
-                Log.I("Reset " + successCount + "/" + restoreInfos.Count + " window positions");
+			if(saveSlot<LAYOUT_COUNT)
+			{
+				layouts[saveSlot].Restore();
+                Log.I("Restored " + layouts[saveSlot].WindowCount + "/" + layouts[saveSlot].WindowCount + " window positions from slot#" + saveSlot);
+			}
         }
 
         private class WindowInfo
@@ -972,6 +1005,40 @@ namespace FreshTools
                 return "WindowInfo() - "+Text + " {" + Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "}";
             }
         }
+		
+		//stores all window possitions
+		private class Layout
+		{
+			public List<WindowInfo> WindowInfos = new List<WindowInfo>();
+			public int WindowCount  { get { return WindowInfos.Count; } }
+			
+			public Layout()
+			{
+				WindowInfos = new List<WindowInfo>();
+			}
+			
+			public void Capture()
+			{
+				var windows = WindowManager.FindAllVisibleWindows();
+				WindowInfos.Clear();
+
+				foreach (IntPtr w in windows)
+				{
+					WindowInfo wInfo = new WindowInfo(w);
+					WindowInfos.Add(wInfo);
+				}
+			}
+			
+			public void Restore()
+			{
+				int successCount = 0;
+				foreach (WindowInfo i in WindowInfos)
+				{
+					if (i.RestorePosition())
+						successCount++;
+				}
+			}
+		}
         #endregion
 
         private enum SnapDirection
