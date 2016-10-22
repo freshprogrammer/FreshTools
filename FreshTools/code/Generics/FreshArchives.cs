@@ -4,6 +4,7 @@ using System.IO;
 using System.Reflection;
 using System.Windows.Forms;
 using Microsoft.Win32;
+using System.Security.Principal;
 
 namespace FreshTools
 {
@@ -27,6 +28,33 @@ namespace FreshTools
             var reg = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
             string productName = (string)reg.GetValue("ProductName");
             return productName.StartsWith("Windows 10");
+        }
+
+        public static bool IsUserAdministrator()
+        {
+            bool isAdmin;
+            WindowsIdentity user = null;
+            try
+            {
+                //get the currently logged in user
+                user = WindowsIdentity.GetCurrent();
+                WindowsPrincipal principal = new WindowsPrincipal(user);
+                isAdmin = principal.IsInRole(WindowsBuiltInRole.Administrator);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                isAdmin = false;
+            }
+            catch (Exception)
+            {
+                isAdmin = false;
+            }
+            finally
+            {
+                if (user != null)
+                    user.Dispose();
+            }
+            return isAdmin;
         }
 
         public static void AddApplicationToStartup()

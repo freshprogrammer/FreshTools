@@ -1,10 +1,10 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
-using System.Diagnostics;
+using Microsoft.Win32;
 
 namespace FreshTools
 {
@@ -71,6 +71,8 @@ namespace FreshTools
             MenuItem settingsMenu = new MenuItem("Settings");
             MenuItem settingsDirMenuItem = new MenuItem("Open AppData");
             MenuItem launchAsAdminMenuItem = new MenuItem("ReLaunch As Admin");
+            if (FreshArchives.IsUserAdministrator())
+                launchAsAdminMenuItem.Enabled = false;
 
             MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows");
             startupEnabledMenuItem.Checked = FreshArchives.IsApplicationInStartup();
