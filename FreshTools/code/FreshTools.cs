@@ -11,8 +11,8 @@ namespace FreshTools
     public class FreshTools : ApplicationContext
     {
         //Notification Icon
-        private Icon freshToolsIcon;
-        private NotifyIcon freshToolsNotifyIcon;
+        private static Icon freshToolsIcon;
+        private static NotifyIcon freshToolsNotifyIcon;
 
         //Settings
         private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
@@ -266,6 +266,11 @@ namespace FreshTools
         private void OnApplicationExit(object sender, EventArgs args)
         {
             //cleanup
+        }
+
+        public static NotifyIcon GetNotifyIcon()
+        {
+            return freshToolsNotifyIcon;
         }
 
         #region HotKey Events
