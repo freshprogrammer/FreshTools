@@ -5,6 +5,8 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
+using System.IO;
+using System.Reflection;
 
 namespace FreshTools
 {
@@ -32,6 +34,7 @@ namespace FreshTools
         //window info for saving and restoring window possitions
 		private const int LAYOUT_COUNT = 4;//menu and hotkeys 1-3
         private static Layout[] layouts = new Layout[LAYOUT_COUNT];
+        private static string LayoutSaveFileBaseName = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\windowLayouts\layout";
 
         //snap region sizes
         const int SnapSizeMaxCount = 9;
@@ -954,8 +957,9 @@ namespace FreshTools
         public static void SaveAllWindowPositions(int saveSlot)
         {
 			if(saveSlot<LAYOUT_COUNT)
-			{
-				layouts[saveSlot].Capture();
+            {
+                layouts[saveSlot].Capture();
+                layouts[saveSlot].SaveToDisk(saveSlot);
                 Log.I("Saved " + layouts[saveSlot].WindowCount + " window positions to slot#" + saveSlot);
                 FreshTools.GetNotifyIcon().ShowBalloonTip(750, "FreshTools", layouts[saveSlot].WindowCount + " Windows saved to layout#" + saveSlot, ToolTipIcon.None);
 			}
@@ -1002,9 +1006,14 @@ namespace FreshTools
                 return false;
             }
 
+            public string SaveString()
+            {
+                return Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "," + Text;
+            }
+
             public override string ToString()
             {
-                return "WindowInfo() - "+Text + " {" + Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "}";
+                return "WindowInfo() - " + Text + " {" + Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "}";
             }
         }
 		
@@ -1030,6 +1039,21 @@ namespace FreshTools
 					WindowInfos.Add(wInfo);
 				}
 			}
+
+            public void SaveToDisk(int slot)
+            {
+                string saveData = "";
+                foreach (WindowInfo wi in WindowInfos)
+                {
+                    saveData += wi.SaveString() + "\n";
+                }
+                saveData.Trim();
+
+                string fileName = LayoutSaveFileBaseName + slot + ".txt";
+                Directory.CreateDirectory(Path.GetDirectoryName(fileName));
+                File.WriteAllText(fileName, saveData);
+
+            }
 			
 			public void Restore()
 			{
