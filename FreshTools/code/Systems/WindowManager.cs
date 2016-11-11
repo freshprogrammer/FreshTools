@@ -956,16 +956,18 @@ namespace FreshTools
 			if(saveSlot<LAYOUT_COUNT)
 			{
 				layouts[saveSlot].Capture();
-				Log.I("Saved " + layouts[saveSlot].WindowCount + " window positions to slot#"+saveSlot);
+                Log.I("Saved " + layouts[saveSlot].WindowCount + " window positions to slot#" + saveSlot);
+                FreshTools.GetNotifyIcon().ShowBalloonTip(750, "FreshTools", layouts[saveSlot].WindowCount + " Windows saved to layout#" + saveSlot, ToolTipIcon.None);
 			}
         }
 
         public static void RestoreAllWindowPositions(int saveSlot)
         {
 			if(saveSlot<LAYOUT_COUNT)
-			{
+            {
 				layouts[saveSlot].Restore();
-                Log.I("Restored " + layouts[saveSlot].WindowCount + "/" + layouts[saveSlot].WindowCount + " window positions from slot#" + saveSlot);
+                Log.I("Restored " + layouts[saveSlot].WindowCount + " window positions from slot#" + saveSlot);
+                FreshTools.GetNotifyIcon().ShowBalloonTip(75, "FreshTools", layouts[saveSlot].WindowCount + " Windows restored from layout#" + saveSlot, ToolTipIcon.None);
 			}
         }
 
