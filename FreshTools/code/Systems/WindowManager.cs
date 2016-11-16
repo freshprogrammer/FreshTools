@@ -45,7 +45,7 @@ namespace FreshTools
 
         //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
         private static Point positionOffset = new Point(-7, 0);
-        private static Point resizeOffset = new Point(15, 8);
+        private static Point resizeOffset = new Point(14, 7);
 
         //alpha control variables
         private static IntPtr lastWindowAlphaHandle = IntPtr.Zero;
