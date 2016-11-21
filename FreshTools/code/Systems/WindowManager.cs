@@ -15,7 +15,7 @@ namespace FreshTools
     /// </summary>
     public static class WindowManager
     {   
-        private const float ComparisonRoundingLimit = 0.01f;//this will need to be broader for lower resolutions since they have less pixes to round to
+        private const float ComparisonRoundingLimit = 0.003f;//this will need to be broader for lower resolutions since they have less pixes to round to
 
         //public ajustable settings
         public static bool WrapLeftRightScreens = true;
@@ -578,8 +578,8 @@ namespace FreshTools
 
         private static void SnapActiveWindow(SnapDirection dir)
         {
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
             RectangleF activeRelativeRectangle = GetActiveWindowRelativeRectangleF();
+            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
 
             RectangleF[] snapAreas = null;
             switch (dir)
