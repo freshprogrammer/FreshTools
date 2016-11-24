@@ -5,6 +5,8 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
+using System.IO;
+using System.Reflection;
 
 namespace FreshTools
 {
@@ -13,7 +15,7 @@ namespace FreshTools
     /// </summary>
     public static class WindowManager
     {   
-        private const float ComparisonRoundingLimit = 0.01f;//this will need to be broader for lower resolutions since they have less pixes to round to
+        private const float ComparisonRoundingLimit = 0.003f;//this will need to be broader for lower resolutions since they have less pixes to round to
 
         //public ajustable settings
         public static bool WrapLeftRightScreens = true;
@@ -32,6 +34,7 @@ namespace FreshTools
         //window info for saving and restoring window possitions
 		private const int LAYOUT_COUNT = 4;//menu and hotkeys 1-3
         private static Layout[] layouts = new Layout[LAYOUT_COUNT];
+        private static string LayoutSaveFileBaseName = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\windowLayouts\layout";
 
         //snap region sizes
         const int SnapSizeMaxCount = 9;
@@ -42,7 +45,7 @@ namespace FreshTools
 
         //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
         private static Point positionOffset = new Point(-7, 0);
-        private static Point resizeOffset = new Point(15, 8);
+        private static Point resizeOffset = new Point(14, 7);
 
         //alpha control variables
         private static IntPtr lastWindowAlphaHandle = IntPtr.Zero;
@@ -62,6 +65,7 @@ namespace FreshTools
                 resizeOffset = new Point(0, 0);
             }
             LoadSnapSizes();
+            LoadLayoutsFromDisk();
         }
 
         public static void LoadSnapSizes(VariablesFile settingsFile=null)
@@ -575,8 +579,8 @@ namespace FreshTools
 
         private static void SnapActiveWindow(SnapDirection dir)
         {
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
             RectangleF activeRelativeRectangle = GetActiveWindowRelativeRectangleF();
+            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
 
             RectangleF[] snapAreas = null;
             switch (dir)
@@ -923,8 +927,6 @@ namespace FreshTools
             });
         }
 
-        /// <summary> Find all windows that contain the given title text </summary>
-        /// <param name="titleText"> The text that the window title must contain. </param>
         public static IEnumerable<IntPtr> FindAllVisibleWindows()
         {
             var shell = GetShellWindow();
@@ -954,18 +956,30 @@ namespace FreshTools
         public static void SaveAllWindowPositions(int saveSlot)
         {
 			if(saveSlot<LAYOUT_COUNT)
-			{
-				layouts[saveSlot].Capture();
-				Log.I("Saved " + layouts[saveSlot].WindowCount + " window positions to slot#"+saveSlot);
+            {
+                layouts[saveSlot].Capture();
+                layouts[saveSlot].SaveToDisk(saveSlot);
+                Log.I("Saved " + layouts[saveSlot].WindowCount + " window positions to slot#" + saveSlot);
+                FreshTools.GetNotifyIcon().ShowBalloonTip(750, "FreshTools", layouts[saveSlot].WindowCount + " Windows saved to layout#" + saveSlot, ToolTipIcon.None);
 			}
+        }
+
+        public static void LoadLayoutsFromDisk()
+        {
+            for (int i = 0; i < LAYOUT_COUNT; i++)
+            {
+                string path = LayoutSaveFileBaseName + i + ".txt"; ;
+                layouts[i].LoadFromDisk(path);
+            }
         }
 
         public static void RestoreAllWindowPositions(int saveSlot)
         {
 			if(saveSlot<LAYOUT_COUNT)
-			{
+            {
 				layouts[saveSlot].Restore();
-                Log.I("Restored " + layouts[saveSlot].WindowCount + "/" + layouts[saveSlot].WindowCount + " window positions from slot#" + saveSlot);
+                Log.I("Restored " + layouts[saveSlot].WindowCount + " window positions from slot#" + saveSlot);
+                FreshTools.GetNotifyIcon().ShowBalloonTip(75, "FreshTools", layouts[saveSlot].WindowCount + " Windows restored from layout#" + saveSlot, ToolTipIcon.None);
 			}
         }
 
@@ -986,6 +1000,12 @@ namespace FreshTools
                 Rectangle = rect.ToRectangle();
             }
 
+            public WindowInfo(string text, Rectangle rec)
+            {
+                Text = text;
+                Rectangle = rec;
+            }
+
             public bool RestorePosition()
             {
                 const short SWP_NOSIZE = 0;
@@ -1000,9 +1020,32 @@ namespace FreshTools
                 return false;
             }
 
+            public string SaveString()
+            {
+                return Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "," + Text;
+            }
+
+            public static WindowInfo ParseSaveString(string data)
+            {
+                try
+                {
+                    string[] values = data.Split(",".ToCharArray(), 5);
+                    int x = int.Parse(values[0]);
+                    int y = int.Parse(values[1]);
+                    int w = int.Parse(values[2]);
+                    int h = int.Parse(values[3]);
+                    WindowInfo result = new WindowInfo(values[4],new Rectangle(x,y,w,h));
+                    return result;
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
+            }
+
             public override string ToString()
             {
-                return "WindowInfo() - "+Text + " {" + Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "}";
+                return "WindowInfo() - " + Text + " {" + Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "}";
             }
         }
 		
@@ -1028,6 +1071,64 @@ namespace FreshTools
 					WindowInfos.Add(wInfo);
 				}
 			}
+
+            public void SaveToDisk(int slot)
+            {
+                string saveData = "";
+                foreach (WindowInfo wi in WindowInfos)
+                {
+                    saveData += wi.SaveString() + "\n";
+                }
+                saveData.Trim();
+
+                string fileName = LayoutSaveFileBaseName + slot + ".txt";
+                Directory.CreateDirectory(Path.GetDirectoryName(fileName));
+                File.WriteAllText(fileName, saveData);
+            }
+
+            public void LoadFromDisk(string path)
+            {//read layout details and attempt to link to window handle by window title
+                string[] fileLines;
+                if (File.Exists(path))
+                {
+                    fileLines = File.ReadAllLines(path);
+                    WindowInfos.Clear();
+
+                    foreach (string s in fileLines)
+                    {
+                        WindowInfo wInfo = WindowInfo.ParseSaveString(s);
+                        if (wInfo != null)
+                        {
+                            int matches = 0;
+                            IntPtr handle = IntPtr.Zero;
+                            var windows = WindowManager.FindWindowsWithText(wInfo.Text);
+                            foreach (IntPtr h in windows)
+                            {
+                                string title = GetWindowText(h);
+                                if(title.Equals(wInfo.Text))//test for exact match
+                                {
+                                    handle = h;
+                                    matches++;
+                                }
+                            }
+
+                            if (handle != IntPtr.Zero)//could be multiple matches
+                            {
+                                wInfo.Handle = handle;
+                                WindowInfos.Add(wInfo);
+                            }
+                            else if (matches == 0)
+                            {//failed exact match - try for partial match
+
+                            }
+                            else
+                            {
+
+                            }
+                        }
+                    }
+                }
+            }
 			
 			public void Restore()
 			{

@@ -1,18 +1,18 @@
-﻿using Microsoft.Win32;
-using System;
+﻿using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
-using System.Diagnostics;
+using Microsoft.Win32;
 
 namespace FreshTools
 {
     public class FreshTools : ApplicationContext
     {
         //Notification Icon
-        private Icon freshToolsIcon;
-        private NotifyIcon freshToolsNotifyIcon;
+        private static Icon freshToolsIcon;
+        private static NotifyIcon freshToolsNotifyIcon;
 
         //Settings
         private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
@@ -71,6 +71,8 @@ namespace FreshTools
             MenuItem settingsMenu = new MenuItem("Settings");
             MenuItem settingsDirMenuItem = new MenuItem("Open AppData");
             MenuItem launchAsAdminMenuItem = new MenuItem("ReLaunch As Admin");
+            if (FreshArchives.IsUserAdministrator())
+                launchAsAdminMenuItem.Enabled = false;
 
             MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows");
             startupEnabledMenuItem.Checked = FreshArchives.IsApplicationInStartup();
@@ -264,6 +266,11 @@ namespace FreshTools
         private void OnApplicationExit(object sender, EventArgs args)
         {
             //cleanup
+        }
+
+        public static NotifyIcon GetNotifyIcon()
+        {
+            return freshToolsNotifyIcon;
         }
 
         #region HotKey Events
