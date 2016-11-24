@@ -65,6 +65,7 @@ namespace FreshTools
                 resizeOffset = new Point(0, 0);
             }
             LoadSnapSizes();
+            LoadLayoutsFromDisk();
         }
 
         public static void LoadSnapSizes(VariablesFile settingsFile=null)
@@ -926,8 +927,6 @@ namespace FreshTools
             });
         }
 
-        /// <summary> Find all windows that contain the given title text </summary>
-        /// <param name="titleText"> The text that the window title must contain. </param>
         public static IEnumerable<IntPtr> FindAllVisibleWindows()
         {
             var shell = GetShellWindow();
@@ -965,6 +964,15 @@ namespace FreshTools
 			}
         }
 
+        public static void LoadLayoutsFromDisk()
+        {
+            for (int i = 0; i < LAYOUT_COUNT; i++)
+            {
+                string path = LayoutSaveFileBaseName + i + ".txt"; ;
+                layouts[i].LoadFromDisk(path);
+            }
+        }
+
         public static void RestoreAllWindowPositions(int saveSlot)
         {
 			if(saveSlot<LAYOUT_COUNT)
@@ -992,6 +1000,12 @@ namespace FreshTools
                 Rectangle = rect.ToRectangle();
             }
 
+            public WindowInfo(string text, Rectangle rec)
+            {
+                Text = text;
+                Rectangle = rec;
+            }
+
             public bool RestorePosition()
             {
                 const short SWP_NOSIZE = 0;
@@ -1009,6 +1023,24 @@ namespace FreshTools
             public string SaveString()
             {
                 return Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "," + Text;
+            }
+
+            public static WindowInfo ParseSaveString(string data)
+            {
+                try
+                {
+                    string[] values = data.Split(",".ToCharArray(), 5);
+                    int x = int.Parse(values[0]);
+                    int y = int.Parse(values[1]);
+                    int w = int.Parse(values[2]);
+                    int h = int.Parse(values[3]);
+                    WindowInfo result = new WindowInfo(values[4],new Rectangle(x,y,w,h));
+                    return result;
+                }
+                catch (Exception)
+                {
+                    return null;
+                }
             }
 
             public override string ToString()
@@ -1052,7 +1084,50 @@ namespace FreshTools
                 string fileName = LayoutSaveFileBaseName + slot + ".txt";
                 Directory.CreateDirectory(Path.GetDirectoryName(fileName));
                 File.WriteAllText(fileName, saveData);
+            }
 
+            public void LoadFromDisk(string path)
+            {//read layout details and attempt to link to window handle by window title
+                string[] fileLines;
+                if (File.Exists(path))
+                {
+                    fileLines = File.ReadAllLines(path);
+                    WindowInfos.Clear();
+
+                    foreach (string s in fileLines)
+                    {
+                        WindowInfo wInfo = WindowInfo.ParseSaveString(s);
+                        if (wInfo != null)
+                        {
+                            int matches = 0;
+                            IntPtr handle = IntPtr.Zero;
+                            var windows = WindowManager.FindWindowsWithText(wInfo.Text);
+                            foreach (IntPtr h in windows)
+                            {
+                                string title = GetWindowText(h);
+                                if(title.Equals(wInfo.Text))//test for exact match
+                                {
+                                    handle = h;
+                                    matches++;
+                                }
+                            }
+
+                            if (handle != IntPtr.Zero)//could be multiple matches
+                            {
+                                wInfo.Handle = handle;
+                                WindowInfos.Add(wInfo);
+                            }
+                            else if (matches == 0)
+                            {//failed exact match - try for partial match
+
+                            }
+                            else
+                            {
+
+                            }
+                        }
+                    }
+                }
             }
 			
 			public void Restore()
