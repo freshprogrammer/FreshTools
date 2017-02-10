@@ -48,61 +48,48 @@ namespace FreshTools
             freshToolsNotifyIcon.Icon = freshToolsIcon;
 
             // Create all context menu items and add them to notification tray icon
-            MenuItem titleMenuItem = new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version));
+            MenuItem windowManagerMenu = new MenuItem("Window Manager");
 
             MenuItem windowManagerSnapHotKeysEnabledMenuItem = new MenuItem("Window Snap Hotkeys");
             windowManagerSnapHotKeysEnabledMenuItem.Checked = WindowManager.SnapHotKeysEnabled;
+            windowManagerSnapHotKeysEnabledMenuItem.Click += windowManagerSnapHotKeysEnabledMenuItem_Click;
             MenuItem windowManagerSnapAltHotKeysEnabledMenuItem = new MenuItem("Window Snap Alt Hotkeys");
             windowManagerSnapAltHotKeysEnabledMenuItem.Checked = WindowManager.SnapAltHotKeysEnabled;
+            windowManagerSnapAltHotKeysEnabledMenuItem.Click += windowManagerSnapAltHotKeysEnabledMenuItem_Click;
             MenuItem windowManagerMiscHotKeysEnabledMenuItem = new MenuItem("Window General Hotkeys");
             windowManagerMiscHotKeysEnabledMenuItem.Checked = WindowManager.MiscHotKeysEnabled;
-
-            MenuItem windowManagerMenu = new MenuItem("Window Manager");
-            MenuItem windowManagerSaveLayoutMenuItem = new MenuItem("Save Window Layout");
-            MenuItem windowManagerRestoreLayoutMenuItem = new MenuItem("Restore Window Layout");
+            windowManagerMiscHotKeysEnabledMenuItem.Click += windowManagerMiscHotKeysEnabledMenuItem_Click;
 
             windowManagerMenu.MenuItems.Add(windowManagerSnapHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerSnapAltHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerMiscHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(new MenuItem("-"));
-            windowManagerMenu.MenuItems.Add(windowManagerSaveLayoutMenuItem);
-            windowManagerMenu.MenuItems.Add(windowManagerRestoreLayoutMenuItem);
+            windowManagerMenu.MenuItems.Add(new MenuItem("Save Window Layout",WindowManager.SaveLayout0));
+            windowManagerMenu.MenuItems.Add(new MenuItem("Restore Window Layout",WindowManager.RestoreLayout0));
 
             MenuItem settingsMenu = new MenuItem("Settings");
-            MenuItem settingsDirMenuItem = new MenuItem("Open AppData");
-            MenuItem launchAsAdminMenuItem = new MenuItem("ReLaunch As Admin");
+
+            MenuItem launchAsAdminMenuItem = new MenuItem("ReLaunch As Admin", launchAsAdminMenuItem_Click);
             if (FreshArchives.IsUserAdministrator())
                 launchAsAdminMenuItem.Enabled = false;
 
-            MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows");
+            MenuItem startupEnabledMenuItem = new MenuItem("Start With Windows",startupEnabledMenuItem_Click);
             startupEnabledMenuItem.Checked = FreshArchives.IsApplicationInStartup();
 
-            settingsMenu.MenuItems.Add(settingsDirMenuItem);
+
+            settingsMenu.MenuItems.Add(new MenuItem("Open AppData", new EventHandler(delegate(Object o, EventArgs a) { Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name); })));
             settingsMenu.MenuItems.Add(launchAsAdminMenuItem);
             settingsMenu.MenuItems.Add(startupEnabledMenuItem);
 
-            MenuItem quitMenuItem = new MenuItem("Quit");
-
             ContextMenu contextMenu = new ContextMenu();
-            contextMenu.MenuItems.Add(titleMenuItem);
+            contextMenu.MenuItems.Add(new MenuItem("Fresh Tools v" + FreshArchives.TrimVersionNumber(Assembly.GetExecutingAssembly().GetName().Version), titleMenuItem_Click));
             contextMenu.MenuItems.Add(new MenuItem("-"));
             contextMenu.MenuItems.Add(windowManagerMenu);
             contextMenu.MenuItems.Add(settingsMenu);
             contextMenu.MenuItems.Add(new MenuItem("-"));
-            contextMenu.MenuItems.Add(quitMenuItem);
+            contextMenu.MenuItems.Add(new MenuItem("Github documentation", new EventHandler(delegate (Object o, EventArgs a) {Process.Start("http://www.github.com/freshprogrammer/freshtools"); })));
+            contextMenu.MenuItems.Add(new MenuItem("Quit", quitMenuItem_Click));
             freshToolsNotifyIcon.ContextMenu = contextMenu;
-
-            // Wire up menu items
-            titleMenuItem.Click += titleMenuItem_Click;
-            windowManagerSnapHotKeysEnabledMenuItem.Click += windowManagerSnapHotKeysEnabledMenuItem_Click;
-            windowManagerSnapAltHotKeysEnabledMenuItem.Click += windowManagerSnapAltHotKeysEnabledMenuItem_Click;
-            windowManagerMiscHotKeysEnabledMenuItem.Click += windowManagerMiscHotKeysEnabledMenuItem_Click;
-            windowManagerSaveLayoutMenuItem.Click += WindowManager.SaveLayout0;
-            windowManagerRestoreLayoutMenuItem.Click += WindowManager.RestoreLayout0;
-            startupEnabledMenuItem.Click += startupEnabledMenuItem_Click;
-            launchAsAdminMenuItem.Click += launchAsAdminMenuItem_Click;
-            settingsDirMenuItem.Click += settingsDirMenuItem_Click;
-            quitMenuItem.Click += quitMenuItem_Click;
         }
 
         /// <summary>
@@ -220,12 +207,6 @@ namespace FreshTools
             p.Start();
             //this process will be killed by the single instance check in the new process
             Application.Exit();
-        }
-
-        private void settingsDirMenuItem_Click(object sender, EventArgs e)
-        {
-            //open this appdata folder
-            Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name);
         }
 
         /// <summary>
