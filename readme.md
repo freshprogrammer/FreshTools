@@ -18,6 +18,12 @@ General | CTRL SHIFT S | Move window right 1 screen
 General | CTRL ALT + | Decrease window transparency
 General | CTRL ALT - | Increase window transparency
 General | CTRL ALT W | Send window to back
+Snap | CTRL ALT SHIFT 1 | Save Layout 1
+Snap | CTRL ALT SHIFT 2 | Save Layout 2
+Snap | CTRL ALT SHIFT 3 | Save Layout 3
+Snap | CTRL ALT 1 | Restore Layout 1
+Snap | CTRL ALT 2 | Restore Layout 2
+Snap | CTRL ALT 3 | Restore Layout 3
 Snap | CTRL ALT Num1 | Snap window to bottom left corner
 Snap | CTRL ALT Num2 | Snap window to bottom
 Snap | CTRL ALT Num3 | Snap window to bottom right corner
@@ -27,12 +33,6 @@ Snap | CTRL ALT Num6 | Snap window to right
 Snap | CTRL ALT Num7 | Snap window to top left corner
 Snap | CTRL ALT Num8 | Snap window to top
 Snap | CTRL ALT Num9 | Snap window to top right corner
-Snap | CTRL ALT SHIFT 1 | Save Layout 1
-Snap | CTRL ALT SHIFT 2 | Save Layout 2
-Snap | CTRL ALT SHIFT 3 | Save Layout 3
-Snap | CTRL ALT 1 | Restore Layout 1
-Snap | CTRL ALT 2 | Restore Layout 2
-Snap | CTRL ALT 3 | Restore Layout 3
 Snap Alt | CTRL ALT comma | Snap window to bottom left corner
 Snap Alt | CTRL ALT period | Snap window to bottom
 Snap Alt | CTRL ALT slash | Snap window to bottom right corner

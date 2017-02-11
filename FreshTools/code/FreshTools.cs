@@ -79,6 +79,7 @@ namespace FreshTools
 
             settingsMenu.MenuItems.Add(new MenuItem("Open AppData", new EventHandler(delegate(Object o, EventArgs a) { Process.Start(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name); })));
             settingsMenu.MenuItems.Add(launchAsAdminMenuItem);
+            settingsMenu.MenuItems.Add(new MenuItem("Reload config", reloadConfigMenuItem_Click));
             settingsMenu.MenuItems.Add(startupEnabledMenuItem);
 
             ContextMenu contextMenu = new ContextMenu();
@@ -87,7 +88,7 @@ namespace FreshTools
             contextMenu.MenuItems.Add(windowManagerMenu);
             contextMenu.MenuItems.Add(settingsMenu);
             contextMenu.MenuItems.Add(new MenuItem("-"));
-            contextMenu.MenuItems.Add(new MenuItem("Github documentation", new EventHandler(delegate (Object o, EventArgs a) {Process.Start("http://www.github.com/freshprogrammer/freshtools"); })));
+            contextMenu.MenuItems.Add(new MenuItem("GitHub Page", new EventHandler(delegate (Object o, EventArgs a) {Process.Start("http://www.github.com/freshprogrammer/freshtools"); })));
             contextMenu.MenuItems.Add(new MenuItem("Quit", quitMenuItem_Click));
             freshToolsNotifyIcon.ContextMenu = contextMenu;
         }
@@ -196,6 +197,12 @@ namespace FreshTools
                 FreshArchives.AddApplicationToStartup();
             i.Checked = FreshArchives.IsApplicationInStartup();
             Log.I("Finisihed updating config");
+        }
+
+        private void reloadConfigMenuItem_Click(object sender, EventArgs e)
+        {
+            Log.I("Reloading config file");
+            LoadConfig();
         }
 
         private void launchAsAdminMenuItem_Click(object sender, EventArgs e)
