@@ -1,16 +1,16 @@
-##Fresh Tools
-###Description
+## Fresh Tools
+### Description
 v.0.7.1
 
 This is a collection of tools and code archives for doing usefull stuff that can be controlled via notification icon. 
 
-###Features
+### Features
 - Hotkeys to manage windows (like WinsplitRevolution), with hotkeys for moving and scaling windows across monitors and positioning windows in screen quadrants.
 - Hotkeys to adjust window transparency and send to back.
 - Tool for saving and restoring all window positions.
 - Option to run at startup (via registry key)
 
-###Hotkeys
+### Hotkeys
 Group | HotKey | Action
 --- | --- | ---
 General | CTRL SHIFT A | Move window left 1 screen
@@ -43,7 +43,7 @@ Snap Alt | CTRL ALT I | Snap window to top left corner
 Snap Alt | CTRL ALT O | Snap window to top
 Snap Alt | CTRL ALT P | Snap window to top right corner
 
-###Code Archives
+### Code Archives
 - Code for creating global hotkeys linked strait to events.
 - Code for static LogSystem that can write to a set of scoped and tagged rolling log files.
 - Code for using FixedLengthArrays
@@ -52,5 +52,5 @@ Snap Alt | CTRL ALT P | Snap window to top right corner
 - Code for checking for and eliminating existing instances on current process
 - Code to check windows ver (up to Windows 10)
 
-###Future:
+### Future:
 - Tool to monitoring a set of websites tracking up and down times.
