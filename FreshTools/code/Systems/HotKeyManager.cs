@@ -218,6 +218,7 @@ namespace FreshTools
             //based on autohotkey modifiers https://autohotkey.com/docs/Hotkeys.htm
             //and strait conversion from the Keys Enum
             hk = new HotKey(0, 0);
+            string original = input;
 
             try
             {
@@ -245,6 +246,7 @@ namespace FreshTools
             }
             catch(Exception)
             {
+                Log.E($"Failed to parse hotkey \"{original}\"");
                 return false;
             }
 

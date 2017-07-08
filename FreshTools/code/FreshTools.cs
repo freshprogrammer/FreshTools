@@ -128,14 +128,14 @@ namespace FreshTools
             VariableLibrary vars = settingsFile.variables;
 
             //load variables
+            WindowManager.LoadSnapSizes(settingsFile);
+            WindowManager.LoadHotKeys(settingsFile);
             bool snapHotKeysEnabled = WindowManager.SnapHotKeysEnabled_Default;
             WindowManager.SnapHotKeysEnabled = vars.GetVariable("SnapWindowHotKeysEnabled", ref snapHotKeysEnabled, true).Boolean;
             bool snapAltHotKeysEnabled = WindowManager.SnapAltHotKeysEnabled_Default;
             WindowManager.SnapAltHotKeysEnabled = vars.GetVariable("SnapAltWindowHotKeysEnabled", ref snapAltHotKeysEnabled, true).Boolean;
             bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled_Default;
             WindowManager.MiscHotKeysEnabled = vars.GetVariable("MiscWindowHotKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
-            WindowManager.LoadSnapSizes(settingsFile);
-            WindowManager.LoadHotKeys(settingsFile);
             Log.I("Finisihed loading config");
             //re-write config file in case one didn't exist already
             SaveConfig();
