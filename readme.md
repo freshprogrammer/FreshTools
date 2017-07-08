@@ -1,6 +1,6 @@
 ## Fresh Tools
 ### Description
-v.0.7.1
+v.0.7.2
 
 This is a collection of tools and code archives for doing usefull stuff that can be controlled via notification icon. 
 
@@ -10,7 +10,8 @@ This is a collection of tools and code archives for doing usefull stuff that can
 - Tool for saving and restoring all window positions.
 - Option to run at startup (via registry key)
 
-### Hotkeys
+### Hotkeys 
+Defaults - Editable in config with [AHK modifiers](https://autohotkey.com/docs/Hotkeys.htm) and Case Sensitive [Key Names](https://msdn.microsoft.com/en-us/library/system.windows.forms.keys(v=vs.110).aspx)
 Group | HotKey | Action
 --- | --- | ---
 General | CTRL SHIFT A | Move window left 1 screen

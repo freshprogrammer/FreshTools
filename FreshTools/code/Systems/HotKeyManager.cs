@@ -20,10 +20,16 @@ namespace FreshTools
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
         #endregion
 
-        public static HotKey RegisterHotKey(KeyModifiers modifiers, Keys key)
+        public static HotKey RegisterHotKey(HotKey hk)
+        {
+            return RegisterHotKey(hk.Modifiers, hk.Key, hk.Handler, hk.Id);
+        }
+
+        public static HotKey RegisterHotKey(KeyModifiers modifiers, Keys key, int id=-1)
         {
             _windowReadyEvent.WaitOne();
-            int id = System.Threading.Interlocked.Increment(ref _id);
+            if(id==-1)
+                id = System.Threading.Interlocked.Increment(ref _id);
             _wnd.Invoke(new RegisterHotKeyDelegate(RegisterHotKeyInternal), _hwnd, id, (uint)modifiers, (uint)key);
 
             HotKey k = new HotKey(id, modifiers, key, GenericHotKeyPressedHandler);
@@ -31,10 +37,11 @@ namespace FreshTools
             return k;
         }
 
-        public static HotKey RegisterHotKey(KeyModifiers modifiers, Keys key, EventHandler handler)
+        public static HotKey RegisterHotKey(KeyModifiers modifiers, Keys key, EventHandler handler, int id = -1)
         {
             _windowReadyEvent.WaitOne();
-            int id = System.Threading.Interlocked.Increment(ref _id);
+            if (id == -1)
+                id = System.Threading.Interlocked.Increment(ref _id);
             _wnd.Invoke(new RegisterHotKeyDelegate(RegisterHotKeyInternal), _hwnd, id, (uint)modifiers, (uint)key);
 
             HotKey k = new HotKey(id, modifiers, key, handler);
@@ -42,10 +49,11 @@ namespace FreshTools
             return k;
         }
 
-        public static HotKey RegisterHotKey(KeyModifiers modifiers, Keys key, EventHandler<HotKeyEventArgs> handler)
+        public static HotKey RegisterHotKey(KeyModifiers modifiers, Keys key, EventHandler<HotKeyEventArgs> handler, int id = -1)
         {
             _windowReadyEvent.WaitOne();
-            int id = System.Threading.Interlocked.Increment(ref _id);
+            if (id == -1)
+                id = System.Threading.Interlocked.Increment(ref _id);
             _wnd.Invoke(new RegisterHotKeyDelegate(RegisterHotKeyInternal), _hwnd, id, (uint)modifiers, (uint)key);
 
             HotKey k = new HotKey(id, modifiers, key, handler);
@@ -70,7 +78,7 @@ namespace FreshTools
         {
             for (int i = hotKeys.Count - 1; i >= 0; i--)
             {
-                if (hotKeys[i].Modifiers == modifiers && hotKeys[i].Keys == keys)
+                if (hotKeys[i].Modifiers == modifiers && hotKeys[i].Key == keys)
                 {
                     _wnd.Invoke(new UnRegisterHotKeyDelegate(UnRegisterHotKeyInternal), _hwnd, hotKeys[i].Id);
                     hotKeys.RemoveAt(i);
@@ -155,15 +163,42 @@ namespace FreshTools
     {
         public int Id;
         public KeyModifiers Modifiers;
-        public Keys Keys;
+        public Keys Key;
         public EventHandler Handler;
         public EventHandler<HotKeyEventArgs> GenericHandler;
+
+        public HotKey(KeyModifiers modifiers, Keys key)
+        {
+            this.Id = -1;
+            this.Modifiers = modifiers;
+            this.Key = key;
+            this.Handler = null;
+            this.GenericHandler = null;
+        }
+
+        public HotKey(KeyModifiers modifiers, Keys key, EventHandler handler)
+        {
+            this.Id = -1;
+            this.Modifiers = modifiers;
+            this.Key = key;
+            this.Handler = handler;
+            this.GenericHandler = null;
+        }
+
+        public HotKey(KeyModifiers modifiers, Keys key, EventHandler<HotKeyEventArgs> genericHandler)
+        {
+            this.Id = -1;
+            this.Modifiers = modifiers;
+            this.Key = key;
+            this.Handler = null;
+            this.GenericHandler = genericHandler;
+        }
 
         public HotKey(int id, KeyModifiers modifiers, Keys key, EventHandler handler)
         {
             this.Id = id;
             this.Modifiers = modifiers;
-            this.Keys = key;
+            this.Key = key;
             this.Handler = handler;
             this.GenericHandler = null;
         }
@@ -172,9 +207,48 @@ namespace FreshTools
         {
             this.Id = id;
             this.Modifiers = modifiers;
-            this.Keys = key;
+            this.Key = key;
             this.Handler = null;
             this.GenericHandler = genericHandler;
+        }
+
+        public static bool TryParseHotKey(string input, out HotKey hk)
+        {
+            //parse hotkey text into its key mod combination
+            //based on autohotkey modifiers https://autohotkey.com/docs/Hotkeys.htm
+            //and strait conversion from the Keys Enum
+            hk = new HotKey(0, 0);
+
+            try
+            {
+                input = input.Trim();
+                input = input.Replace(" ", "");
+
+                if (input.Contains("|"))
+                    hk.Modifiers |= KeyModifiers.NoRepeat;
+                if (input.Contains("#"))
+                    hk.Modifiers |= KeyModifiers.Windows;
+                if (input.Contains("!"))
+                    hk.Modifiers |= KeyModifiers.Alt;
+                if (input.Contains("^"))
+                    hk.Modifiers |= KeyModifiers.Control;
+                if (input.Contains("+"))
+                    hk.Modifiers |= KeyModifiers.Shift;
+
+                input = input.Replace("|", "");
+                input = input.Replace("#", "");
+                input = input.Replace("!", "");
+                input = input.Replace("^", "");
+                input = input.Replace("+", "");
+
+                hk.Key = (Keys)Enum.Parse(typeof(Keys), input);
+            }
+            catch(Exception)
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 
