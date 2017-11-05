@@ -216,27 +216,31 @@ namespace FreshTools
 
         public static void LoadHotKeys(VariablesFile settingsFile)
         {
-             HotKey hk;
+            //modifiers |=NoRepeat, #=Windows, !=Alt, ^=Ctrl, +=Shift
+            //based on autohotkey modifiers https://autohotkey.com/docs/Hotkeys.htm
+            //and strait conversion from the Keys Enum
+
+            HotKey hk;
 
             //snap hotkeys - with defaults
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SnapActiveWindowToBottomLeft", "|^!NumPad1").String, out hk))
-                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToBottomLeft));
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToBottomLeft));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SnapActiveWindowToBottom", "|^!NumPad2").String, out hk))
-                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToBottom));
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToBottom));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SnapActiveWindowToBottomRight", "|^!NumPad3").String, out hk))
-                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToBottomRight));
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToBottomRight));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SnapActiveWindowToLeft", "|^!NumPad4").String, out hk))
-                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToLeft));
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToLeft));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SnapActiveWindowToCenter", "|^!NumPad5").String, out hk))
-                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToCenter));
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToCenter));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SnapActiveWindowToRight", "|^!NumPad6").String, out hk))
-                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToRight));
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToRight));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SnapActiveWindowToTopLeft", "|^!NumPad7").String, out hk))
-                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToTopLeft));
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToTopLeft));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SnapActiveWindowToTop", "|^!NumPad8").String, out hk))
-                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToTop));
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToTop));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SnapActiveWindowToTopRight", "|^!NumPad9").String, out hk))
-                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToTopRight));
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToTopRight));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SaveLayout1", "|^!+D1").String, out hk))
                 snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SaveLayout1));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SaveLayout2", "|^!+D2").String, out hk))
@@ -249,26 +253,38 @@ namespace FreshTools
                 snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, RestoreLayout2));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_RestoreLayout3", "|^!D3").String, out hk))
                 snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, RestoreLayout3));
+            //corner move hotkeys - with defaults
+            //if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_MoveActiveWindowToBottomLeft", "|^+G").String, out hk))
+            if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_MoveActiveWindowToBottomLeft", "|^!End").String, out hk))
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToBottomLeft));
+            if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_MoveActiveWindowToBottomRight", "|^!PageDown").String, out hk))
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToBottomRight));
+            if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_MoveActiveWindowToTopLeft", "|^!Home").String, out hk))
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToTopLeft));
+            if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_MoveActiveWindowToTopRight", "|^!PageUp").String, out hk))
+                snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToTopRight));
+            //if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_MoveActiveWindowToCenter", "|^!+NumPad5").String, out hk)) //broken because of shift numpad
+            //    snapHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToTopRight));
 
             //altsnap hotkeys - with defaults
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_Alt_SnapActiveWindowToBottomLeft", "|^!Oemcomma").String, out hk))
-                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToBottomLeft));
+                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToBottomLeft));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_Alt_SnapActiveWindowToBottom", "|^!OemPeriod").String, out hk))
-                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToBottom));
+                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToBottom));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_Alt_SnapActiveWindowToBottomRight", "|^!OemQuestion").String, out hk))
-                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToBottomRight));
+                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToBottomRight));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_Alt_SnapActiveWindowToLeft", "|^!K").String, out hk))
-                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToLeft));
+                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToLeft));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_Alt_SnapActiveWindowToCenter", "|^!L").String, out hk))
-                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToCenter));
+                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToCenter));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_Alt_SnapActiveWindowToRight", "|^!OemSemicolon").String, out hk))
-                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToRight));
+                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToRight));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_Alt_SnapActiveWindowToTopLeft", "|^!I").String, out hk))
-                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToTopLeft));
+                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToTopLeft));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_Alt_SnapActiveWindowToTop", "|^!O").String, out hk))
-                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToTop));
+                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToTop));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_Alt_SnapActiveWindowToTopRight", "|^!P").String, out hk))
-                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToTopRight));
+                snapAltHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SnapActiveWindowToTopRight));
 
             //misc hotkeys - with defaults
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_MoveActiveWindowToLeftScreen", "|^+A").String, out hk))
@@ -711,53 +727,110 @@ namespace FreshTools
             int newH = (int)(snapAreas[snapIndex].Height * workingArea.Height);
             MoveActiveWindowTo(newX, newY, newW, newH);
         }
+
+
+        private static void MoveActiveWindowToCorner(SnapDirection dir)
+        {
+            //keep window size and move to a given corner or center
+            if (!(dir == SnapDirection.TopLeft || dir == SnapDirection.TopRight || dir == SnapDirection.BottomLeft || dir == SnapDirection.BottomRight || dir == SnapDirection.Center))
+                return;
+
+            Rect windowRect = new Rect();
+            GetWindowRect(GetForegroundWindow(), ref windowRect);
+            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
+
+            float newX = workingArea.X;
+            float newY = workingArea.Y;
+
+            //set new X
+            if (dir == SnapDirection.TopRight || dir == SnapDirection.BottomRight)
+                newX += workingArea.Width - windowRect.Width + resizeOffset.X;
+            //set new Y
+            if (dir == SnapDirection.BottomLeft || dir == SnapDirection.BottomRight)
+                newY += workingArea.Height - windowRect.Height + resizeOffset.Y;
+
+            if (dir == SnapDirection.Center)
+            {
+                newX += workingArea.Width/2 - (windowRect.Width + resizeOffset.X)/2;
+                newY += workingArea.Height/2 - (windowRect.Height + resizeOffset.Y)/2;
+            }
+
+            MoveActiveWindowTo((int)newX, (int)newY);
+        }
         #endregion
 
         #region HotKey Functions
         #region Snap active window screen to all 8 directions
-        public static void MoveActiveWindowToTop(object o, HotKeyEventArgs args)
+        public static void SnapActiveWindowToTop(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Top);
         }
 
-        public static void MoveActiveWindowToBottom(object o, HotKeyEventArgs args)
+        public static void SnapActiveWindowToBottom(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Bottom);
         }
 
-        public static void MoveActiveWindowToLeft(object o, HotKeyEventArgs args)
+        public static void SnapActiveWindowToLeft(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Left);
         }
 
-        public static void MoveActiveWindowToCenter(object o, HotKeyEventArgs args)
+        public static void SnapActiveWindowToCenter(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Center);
         }
 
-        public static void MoveActiveWindowToRight(object o, HotKeyEventArgs args)
+        public static void SnapActiveWindowToRight(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.Right);
         }
 
-        public static void MoveActiveWindowToTopLeft(object o, HotKeyEventArgs args)
+        public static void SnapActiveWindowToTopLeft(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.TopLeft);
         }
 
-        public static void MoveActiveWindowToTopRight(object o, HotKeyEventArgs args)
+        public static void SnapActiveWindowToTopRight(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.TopRight);
         }
 
-        public static void MoveActiveWindowToBottomLeft(object o, HotKeyEventArgs args)
+        public static void SnapActiveWindowToBottomLeft(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.BottomLeft);
         }
 
-        public static void MoveActiveWindowToBottomRight(object o, HotKeyEventArgs args)
+        public static void SnapActiveWindowToBottomRight(object o, HotKeyEventArgs args)
         {
             SnapActiveWindow(SnapDirection.BottomRight);
+        }
+        #endregion
+
+        #region Move active window to all 4 corners
+        public static void MoveActiveWindowToTopLeft(object o, HotKeyEventArgs args)
+        {
+            MoveActiveWindowToCorner(SnapDirection.TopLeft);
+        }
+
+        public static void MoveActiveWindowToTopRight(object o, HotKeyEventArgs args)
+        {
+            MoveActiveWindowToCorner(SnapDirection.TopRight);
+        }
+
+        public static void MoveActiveWindowToBottomLeft(object o, HotKeyEventArgs args)
+        {
+            MoveActiveWindowToCorner(SnapDirection.BottomLeft);
+        }
+
+        public static void MoveActiveWindowToBottomRight(object o, HotKeyEventArgs args)
+        {
+            MoveActiveWindowToCorner(SnapDirection.BottomRight);
+        }
+
+        public static void MoveActiveWindowToCenter(object o, HotKeyEventArgs args)
+        {
+            MoveActiveWindowToCorner(SnapDirection.Center);
         }
         #endregion
 

@@ -215,6 +215,7 @@ namespace FreshTools
         public static bool TryParseHotKey(string input, out HotKey hk)
         {
             //parse hotkey text into its key mod combination
+            //modifiers |=NoRepeat, #=Windows, !=Alt, ^=Ctrl, +=Shift
             //based on autohotkey modifiers https://autohotkey.com/docs/Hotkeys.htm
             //and strait conversion from the Keys Enum
             hk = new HotKey(0, 0);
