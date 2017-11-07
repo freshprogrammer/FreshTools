@@ -3,10 +3,8 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Threading;
-using System.Windows.Input;
 using System.Windows.Forms;
 using Microsoft.Win32;
-
 
 namespace FreshTools
 {
@@ -275,11 +273,13 @@ namespace FreshTools
                 thread.Start(e);
             };
         }
-
+        
         private static void HandleMouseWheelAsVolume(object o)
         {
             //mouse wheel controlls volume while pause key is pressed - has to be called by seperate STA thread
-            if ((Keyboard.GetKeyStates(Key.Pause) & KeyStates.Down) > 0)
+
+            //if ((Keyboard.GetKeyStates(Key.Pause) & KeyStates.Down) > 0)//with pause key
+            if (MouseListener.RightMouseButtonDown)//with right mouse button
             {
                 MouseEventArgs args = (MouseEventArgs)o;
                 if (args.WheelDelta > 0)

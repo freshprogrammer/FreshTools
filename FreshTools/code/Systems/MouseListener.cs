@@ -126,6 +126,10 @@ namespace FreshTools
 
         public static event EventHandler<MouseEventArgs> OnMouseInput;
 
+        [DllImport("user32.dll")]
+        public static extern short GetAsyncKeyState(UInt16 virtualKeyCode);
+        public static bool RightMouseButtonDown { get { return (GetAsyncKeyState((ushort)Keys.RButton) & 0x8000) != 0; } }
+
         /// <summary>
         /// Start watching mouse events
         /// </summary>
