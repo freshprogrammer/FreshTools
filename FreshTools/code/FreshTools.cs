@@ -3,8 +3,10 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Threading;
+using System.Windows.Input;
 using System.Windows.Forms;
 using Microsoft.Win32;
+
 
 namespace FreshTools
 {
@@ -271,6 +273,33 @@ namespace FreshTools
             //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.C);
             //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.X);
             //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.Z);
+
+            //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Q, TestKeyPressed);
+
+            MouseListener.Start();
+            MouseListener.OnMouseInput += (s, e) =>
+            {
+                Thread thread = new Thread(AdjustVolumeThread);
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start(e);
+            };
+        }
+        
+        private static void TestKeyPressed(object sender, HotKeyEventArgs args)
+        {
+            Log.E("Test Key Pressed");
+        }
+
+        private static void AdjustVolumeThread(object o)
+        {
+            if ((Keyboard.GetKeyStates(Key.Pause) & KeyStates.Down) > 0)
+            {
+                MouseEventArgs args = (MouseEventArgs)o;
+                if (args.WheelDelta > 0)
+                    FreshArchives.VolumeUp();
+                else
+                    FreshArchives.VolumeDown();
+            }
         }
 
         private static void GenericHotKeyPressed(object sender, HotKeyEventArgs args)
