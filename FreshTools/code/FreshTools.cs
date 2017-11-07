@@ -18,6 +18,8 @@ namespace FreshTools
         private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
         private VariablesFile settingsFile;
 
+        private static bool MouseVolumeControlEnabled = false;//this is off by default
+
         public FreshTools()
         {
             Thread.CurrentThread.Name = "FreshTools Thread";
@@ -30,7 +32,9 @@ namespace FreshTools
             freshToolsNotifyIcon.Visible = true;
 
             RegisterHotkeys();
-            StartVolumeMouseListener();
+
+            if(MouseVolumeControlEnabled)
+                StartVolumeMouseListener();
 
             Log.I("FreshTools started sucsessfully");
         }
@@ -137,6 +141,9 @@ namespace FreshTools
             WindowManager.SnapAltHotKeysEnabled = vars.GetVariable("SnapAltWindowHotKeysEnabled", ref snapAltHotKeysEnabled, true).Boolean;
             bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled_Default;
             WindowManager.MiscHotKeysEnabled = vars.GetVariable("MiscWindowHotKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
+
+            MouseVolumeControlEnabled = vars.GetVariable("MouseVolumeControlEnabled", ref MouseVolumeControlEnabled, true).Boolean;
+
             Log.I("Finisihed loading config");
             //re-write config file in case one didn't exist already
             SaveConfig();
