@@ -18,6 +18,8 @@ namespace FreshTools
         private readonly string configFilePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\config.txt";
         private VariablesFile settingsFile;
 
+        private static bool MouseVolumeControlEnabled = false;//this is off by default
+
         public FreshTools()
         {
             Thread.CurrentThread.Name = "FreshTools Thread";
@@ -30,6 +32,9 @@ namespace FreshTools
             freshToolsNotifyIcon.Visible = true;
 
             RegisterHotkeys();
+
+            if(MouseVolumeControlEnabled)
+                StartVolumeMouseListener();
 
             Log.I("FreshTools started sucsessfully");
         }
@@ -136,6 +141,9 @@ namespace FreshTools
             WindowManager.SnapAltHotKeysEnabled = vars.GetVariable("SnapAltWindowHotKeysEnabled", ref snapAltHotKeysEnabled, true).Boolean;
             bool miscHotKeysEnabled = WindowManager.MiscHotKeysEnabled_Default;
             WindowManager.MiscHotKeysEnabled = vars.GetVariable("MiscWindowHotKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
+
+            MouseVolumeControlEnabled = vars.GetVariable("MouseVolumeControlEnabled", ref MouseVolumeControlEnabled, true).Boolean;
+
             Log.I("Finisihed loading config");
             //re-write config file in case one didn't exist already
             SaveConfig();
@@ -262,6 +270,32 @@ namespace FreshTools
             return freshToolsNotifyIcon;
         }
 
+        private static void StartVolumeMouseListener()
+        {
+            MouseListener.Start();
+            MouseListener.OnMouseInput += (s, e) =>
+            {
+                Thread thread = new Thread(HandleMouseWheelAsVolume);
+                thread.SetApartmentState(ApartmentState.STA);
+                thread.Start(e);
+            };
+        }
+        
+        private static void HandleMouseWheelAsVolume(object o)
+        {
+            //mouse wheel controlls volume while pause key is pressed - has to be called by seperate STA thread
+
+            //if ((Keyboard.GetKeyStates(Key.Pause) & KeyStates.Down) > 0)//with pause key
+            if (MouseListener.RightMouseButtonDown)//with right mouse button
+            {
+                MouseEventArgs args = (MouseEventArgs)o;
+                if (args.WheelDelta > 0)
+                    FreshArchives.VolumeUp();
+                else
+                    FreshArchives.VolumeDown();
+            }
+        }
+
         #region HotKey Events
         private static void RegisterHotkeys()
         {
@@ -271,6 +305,13 @@ namespace FreshTools
             //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.C);
             //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.X);
             //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Shift), Keys.Z);
+
+            //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Q, TestKeyPressed);
+        }
+        
+        private static void TestKeyPressed(object sender, HotKeyEventArgs args)
+        {
+            Log.E("Test Key Pressed");
         }
 
         private static void GenericHotKeyPressed(object sender, HotKeyEventArgs args)
