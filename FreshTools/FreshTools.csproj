@@ -62,6 +62,7 @@
     <ApplicationIcon>HDD_Idle.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -71,6 +72,7 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="code\FreshTools.cs" />
@@ -85,6 +87,7 @@
     <Compile Include="code\Scripting\VariablesFile.cs" />
     <Compile Include="code\Systems\HotKeyManager.cs" />
     <Compile Include="code\Systems\Log.cs" />
+    <Compile Include="code\Systems\MouseListener.cs" />
     <Compile Include="code\Systems\WindowManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

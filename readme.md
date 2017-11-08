@@ -1,6 +1,6 @@
 ## Fresh Tools
 ### Description
-v.0.7.2
+v.0.7.3
 
 This is a collection of tools and code archives for doing usefull stuff that can be controlled via notification icon. 
 
@@ -9,6 +9,7 @@ This is a collection of tools and code archives for doing usefull stuff that can
 - Hotkeys to adjust window transparency and send to back.
 - Tool for saving and restoring all window positions.
 - Option to run at startup (via registry key)
+- Control windows volume with right mouse button and mouse wheel. (disabled by default in config)
 
 ### Hotkeys 
 Defaults - Editable in config with [AHK modifiers](https://autohotkey.com/docs/Hotkeys.htm) and Case Sensitive [Key Names](https://msdn.microsoft.com/en-us/library/system.windows.forms.keys(v=vs.110).aspx)
@@ -35,6 +36,10 @@ Snap | CTRL ALT Num6 | Snap window to right
 Snap | CTRL ALT Num7 | Snap window to top left corner
 Snap | CTRL ALT Num8 | Snap window to top
 Snap | CTRL ALT Num9 | Snap window to top right corner
+Snap | CTRL ALT Home | Move window to top left corner
+Snap | CTRL ALT PageUp | Move window to top right corner
+Snap | CTRL ALT End | Move window to bottom left corner
+Snap | CTRL ALT PageDown | Move window to bottom right corner
 Snap Alt | CTRL ALT comma | Snap window to bottom left corner
 Snap Alt | CTRL ALT period | Snap window to bottom
 Snap Alt | CTRL ALT slash | Snap window to bottom right corner
@@ -47,6 +52,7 @@ Snap Alt | CTRL ALT P | Snap window to top right corner
 
 ### Code Archives
 - Code for creating global hotkeys linked strait to events.
+- Code for global mouse listener (currently wheel only)
 - Code for static LogSystem that can write to a set of scoped and tagged rolling log files.
 - Code for using FixedLengthArrays
 - Code for reading and writing from internal 'script' files. Used for doccumented config files.
