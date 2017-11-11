@@ -291,10 +291,10 @@ namespace FreshTools
                 miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToLeftScreen));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_MoveActiveWindowToRightScreen", "|^+S").String, out hk))
                 miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, MoveActiveWindowToRightScreen));
-            if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_IncreaseWindowTranspancy", "^!Add").String, out hk))
-                miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, IncreaseWindowTranspancy));
-            if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_DecreaseWindowTranspancy", "^!Subtract").String, out hk))
-                miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, DecreaseWindowTranspancy));
+            if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_IncreaseWindowTransparency", "^!Add").String, out hk))
+                miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, IncreaseWindowTransparency));
+            if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_DecreaseWindowTransparency", "^!Subtract").String, out hk))
+                miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, DecreaseWindowTransparency));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SendActiveWindowToBack", "|^!W").String, out hk))
                 miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SendActiveWindowToBack));
 
@@ -595,7 +595,7 @@ namespace FreshTools
             }
         }
 
-        private static void SetWindowTransparancy(int d)
+        private static void SetWindowTransparency(int d)
         {
             byte a;
             IntPtr handle = GetForegroundWindow();
@@ -623,7 +623,7 @@ namespace FreshTools
 
             //Enable extended layered style on window if not enabled
             SetWindowLong(handle, GWL_EXSTYLE, GetWindowLong(handle, GWL_EXSTYLE) | WS_EX_LAYERED);
-            //set window transparency
+            //set window Transparency
             SetLayeredWindowAttributes(handle, 0, a, LWA_ALPHA);
 
             lastWindowAlpha = a;
@@ -839,14 +839,14 @@ namespace FreshTools
             SendActiveWindowToBack();
         }
 
-        public static void IncreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
+        public static void IncreaseWindowTransparency(object sender = null, HotKeyEventArgs e = null)
         {
-            SetWindowTransparancy(1);
+            SetWindowTransparency(1);
         }
 
-        public static void DecreaseWindowTranspancy(object sender = null, HotKeyEventArgs e = null)
+        public static void DecreaseWindowTransparency(object sender = null, HotKeyEventArgs e = null)
         {
-            SetWindowTransparancy(-1);
+            SetWindowTransparency(-1);
         }
 
         public static void SaveLayout1(object sender = null, HotKeyEventArgs e = null)
