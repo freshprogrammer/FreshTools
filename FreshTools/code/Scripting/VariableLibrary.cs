@@ -12,9 +12,11 @@ namespace FreshTools
         private VariablesComparator variablesComparator;
         private bool variableListSorted = true;
         private Variable searchDummy;
+        public readonly bool CaseSensitive;
 	    
 	    public VariableLibrary(bool caseSensitive)
         {
+            this.CaseSensitive = caseSensitive;
             variablesComparator = new VariablesComparator(caseSensitive);
             variables = new List<Variable>();
 	    }

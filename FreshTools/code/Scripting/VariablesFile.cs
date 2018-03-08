@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace FreshTools
@@ -66,9 +67,46 @@ namespace FreshTools
                 streamReader.Close();
             }
             Profiler.Stop();
-	    }
+        }
 
+        public void RenameVariable(string oldName, string newName)
+        {
+            for (int i = 0; i < lines.Count; i++)
+            {
+                try
+                {
+                    string varName = lines[i].Content;
+                    if (varName == null || varName.Trim().Length == 0 || varName.Substring(0, 2) == "//")
+                        continue;
+                    varName = varName.Replace("var ", "").Trim();
+                    varName = varName.Substring(0, varName.IndexOf("=")).Trim();
+                    StringComparison sc = StringComparison.CurrentCulture;
+                    if (variables.CaseSensitive)
+                        sc = StringComparison.CurrentCultureIgnoreCase;
 
+                    if (varName.Equals(oldName, sc))
+                    {
+                        variables.RemoveVariable(oldName);
+
+                        if (newName != null)
+                        {
+                            //TODO not sure this should properly recursively scan through other script files.
+                            lines[i] = new ScriptLine("var " + newName + " = " + lines[i].Content.Substring(lines[i].Content.IndexOf("=")+1), this, parent);
+                            variables.Add(lines[i].Variable);
+                        }
+                        else//remove variable
+                            lines.RemoveAt(i--);
+                        break;
+                    }
+                }
+                catch (ArgumentOutOfRangeException) { }
+            }
+        }
+
+        public void RemoveVariable(string name)
+        {
+            RenameVariable(name, null);
+        }
 
         //preserve comments and such by preserving all original text... not done
         public string SaveString()
