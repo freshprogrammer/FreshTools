@@ -53,8 +53,8 @@ namespace FreshTools
         //alpha control variables
         private static IntPtr lastWindowAlphaHandle = IntPtr.Zero;
         private static byte lastWindowAlpha = 0;
-        private const byte WindowAlphaIncrement = 32;
-        private const byte MinWindowAlpha = 32;
+        private const byte WindowAlphaIncrement = 16;
+        private const byte MinWindowAlpha = 16;
 
         #region Setup and teardown
         static WindowManager()
