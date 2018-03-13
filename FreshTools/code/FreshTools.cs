@@ -130,8 +130,9 @@ namespace FreshTools
         public void LoadConfig()
         {
             settingsFile = new VariablesFile(configFilePath, null, false);
+            UpdateConfigFile();
             VariableLibrary vars = settingsFile.variables;
-
+            
             //load variables
             WindowManager.LoadSnapSizes(settingsFile);
             WindowManager.LoadHotKeys(settingsFile);
@@ -147,6 +148,18 @@ namespace FreshTools
             Log.I("Finisihed loading config");
             //re-write config file in case one didn't exist already
             SaveConfig();
+        }
+
+        public void UpdateConfigFile()
+        {
+            //attempt to fix script file
+            //rename old variables to match
+            settingsFile = new VariablesFile(configFilePath, null, false);
+            settingsFile.RenameVariable("HotKey_DecreaseWindowTranspancy", "HotKey_DecreaseWindowTransparency");
+            settingsFile.RenameVariable("HotKey_IncreaseWindowTranspancy", "HotKey_IncreaseWindowTransparency");
+
+            //remove dead variables
+
         }
 
         /// <summary>

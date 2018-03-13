@@ -209,7 +209,8 @@ namespace FreshTools
                     Thread.Sleep(3);
                 }
                 var item = queue.Dequeue();
-                if (item is bool) break;
+                if (item is bool)
+                    break;
 
                 if(item!=null)
                     MListener_MouseEvent(item as RawMouseEventArgs);

@@ -1,6 +1,6 @@
 ## Fresh Tools
 ### Description
-v.0.7.3
+v.0.7.4
 
 This is a collection of tools and code archives for doing usefull stuff that can be controlled via notification icon. 
 
@@ -40,6 +40,7 @@ Snap | CTRL ALT Home | Move window to top left corner
 Snap | CTRL ALT PageUp | Move window to top right corner
 Snap | CTRL ALT End | Move window to bottom left corner
 Snap | CTRL ALT PageDown | Move window to bottom right corner
+Snap | CTRL ALT Multiply | Move window to Center
 Snap Alt | CTRL ALT comma | Snap window to bottom left corner
 Snap Alt | CTRL ALT period | Snap window to bottom
 Snap Alt | CTRL ALT slash | Snap window to bottom right corner
