@@ -19,11 +19,14 @@ namespace FreshTools
         private VariablesFile settingsFile;
 
         private static bool MouseVolumeControlEnabled = false;//this is off by default
+        private static bool DoubleClickIconToLoadConfigEnabled = false;//this is off by default
 
         public FreshTools()
         {
             Thread.CurrentThread.Name = "FreshTools Thread";
             Log.Init();
+            Log.LogFileLogLevel = LogLevel.Verbose;
+            Log.ConsoleLogLevel = LogLevel.Verbose;
             LoadConfig();
 			UpdateRegistryForStartup();
 
@@ -51,6 +54,7 @@ namespace FreshTools
             // Load icons from embeded resources
             freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
             freshToolsNotifyIcon.Icon = freshToolsIcon;
+            freshToolsNotifyIcon.DoubleClick += new EventHandler(this.IconDoubleClicked);
 
             // Create all context menu items and add them to notification tray icon
             MenuItem windowManagerMenu = new MenuItem("Window Manager");
@@ -144,6 +148,7 @@ namespace FreshTools
             WindowManager.MiscHotKeysEnabled = vars.GetVariable("MiscWindowHotKeysEnabled", ref miscHotKeysEnabled, true).Boolean;
 
             MouseVolumeControlEnabled = vars.GetVariable("MouseVolumeControlEnabled", ref MouseVolumeControlEnabled, true).Boolean;
+            DoubleClickIconToLoadConfigEnabled = vars.GetVariable("DoubleClickIconToLoadConfigEnabled", ref DoubleClickIconToLoadConfigEnabled, true).Boolean;
 
             Log.I("Finisihed loading config");
             //re-write config file in case one didn't exist already
@@ -272,10 +277,22 @@ namespace FreshTools
 				}
             }
         }
-		
+
         private void OnApplicationExit(object sender, EventArgs args)
         {
             //cleanup
+        }
+
+        private void IconDoubleClicked(object sender, EventArgs args)
+        {
+            if(DoubleClickIconToLoadConfigEnabled)
+            {
+                Log.I("IconDoubleClicked()");
+                LoadConfig();
+            }
+            else
+                Log.I("IconDoubleClicked() - disabled in config");
+
         }
 
         public static NotifyIcon GetNotifyIcon()
@@ -321,7 +338,7 @@ namespace FreshTools
 
             //HotKeyManager.RegisterHotKey((KeyModifiers.NoRepeat | KeyModifiers.Control | KeyModifiers.Alt), Keys.Q, TestKeyPressed);
         }
-        
+
         private static void TestKeyPressed(object sender, HotKeyEventArgs args)
         {
             Log.E("Test Key Pressed");
