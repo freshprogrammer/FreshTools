@@ -189,7 +189,14 @@ namespace FreshTools
         private static void MListener(object sender, RawMouseEventArgs e)
         {
             //mouseQueue.Add(e);
-            queue.Enqueue(e);
+            try
+            {
+                queue.Enqueue(e);
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex);
+            }
         }
 
         /// <summary>

@@ -47,8 +47,8 @@ namespace FreshTools
         public static List<RectangleF> CenterSnapSizes;
 
         //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
-        private static Point positionOffset = new Point(-7, 0);
-        private static Point resizeOffset = new Point(14, 7);
+        private static Point positionOffsetMain = new Point(-7, 0);
+        private static Point resizeOffsetMain = new Point(14, 7);
 
         //alpha control variables
         private static IntPtr lastWindowAlphaHandle = IntPtr.Zero;
@@ -64,8 +64,8 @@ namespace FreshTools
 			
             if (!FreshArchives.IsWindows10())
             {
-                positionOffset = new Point(0, 0);
-                resizeOffset = new Point(0, 0);
+                positionOffsetMain = new Point(0, 0);
+                resizeOffsetMain = new Point(0, 0);
             }
             LoadSnapSizes();
             LoadLayoutsFromDisk();
@@ -539,6 +539,7 @@ namespace FreshTools
             
             if (newScreen.WorkingArea.Width != currentScreen.WorkingArea.Width || newScreen.WorkingArea.Height != currentScreen.WorkingArea.Height)
             {
+                Point resizeOffset = GetResizeOffsetForWindowByTitle(GetWindowText(handle));
                 //different size working area/resolution
                 //scale window to new resolution
                 double widthPercentage = 1.0 * (rect.Width - resizeOffset.X) / currentWorkingArea.Width;
@@ -553,7 +554,43 @@ namespace FreshTools
                 MoveActiveWindowTo(newX, newY, false);
 
         }
-#endregion
+
+        public static Point GetResizeOffsetForWindowByTitle(string title)
+        {
+            return GetOffsetForWindowByTitle(title, false);
+        }
+
+        public static Point GetPositionOffsetForWindowByTitle(string title)
+        {
+            return GetOffsetForWindowByTitle(title, true);
+        }
+
+        public static Point GetOffsetForWindowByTitle(string title, bool position)
+        {
+            //need to use regular 7p offset for certain applications and no offset for other. Seems to be new/microsoft application that use a new window backend. very anoying
+            bool useOffset = true;
+            if (!title.Contains("Google Chrome") && !title.Contains("Firefox")) // ignore sub titles from web browsers
+            {
+                if (title.Contains("Microsoft Teams")) useOffset = false;
+                else if (title.Contains("Outlook")) useOffset = false;
+                else if (title.Contains("WhatsApp")) useOffset = false;
+                else if (title.Contains("Visual Studio")) useOffset = false;
+                else if (title.Contains("Excel")) useOffset = false;
+                else if (title.Contains("Word")) useOffset = false;
+                else if (title.Contains("Slack")) useOffset = false;
+            }
+
+            Log.V("GetOffsetForWindowByTitle(\""+ title + "\","+ position + ")  UseOffset = " + useOffset);
+
+            if (position)
+                if (useOffset) return positionOffsetMain;
+                else return new Point(0, 0);
+            else
+                if (useOffset) return resizeOffsetMain;
+                else return new Point(0, 0);
+        }
+
+        #endregion
 
         #region Window movement & snap (control) logic
         public static void MoveActiveWindowTo(int x, int y, bool includePosOffset = true)
@@ -566,6 +603,7 @@ namespace FreshTools
             {
                 if (includePosOffset)
                 {
+                    Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));
                     x += positionOffset.X;
                     y += positionOffset.Y;
                 }
@@ -582,6 +620,8 @@ namespace FreshTools
             {
                 if (includePosOffset)
                 {
+                    Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));
+                    Point resizeOffset = GetResizeOffsetForWindowByTitle(GetWindowText(handle));
                     x += positionOffset.X;
                     y += positionOffset.Y;
 
@@ -735,7 +775,10 @@ namespace FreshTools
                 return;
 
             Rect windowRect = new Rect();
-            GetWindowRect(GetForegroundWindow(), ref windowRect);
+            IntPtr handle = GetForegroundWindow();
+            GetWindowRect(handle, ref windowRect);
+            Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));
+            Point resizeOffset = GetResizeOffsetForWindowByTitle(GetWindowText(handle));
             Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
 
             float newX = workingArea.X;
@@ -899,6 +942,8 @@ namespace FreshTools
             IntPtr handle = GetForegroundWindow();
             Rect rect = new Rect();
             GetWindowRect(handle, ref rect);
+            Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));
+            Point resizeOffset = GetResizeOffsetForWindowByTitle(GetWindowText(handle));
             Rectangle childRect = rect.ToRectangle();
 
             Rectangle workingSpace = GetScreenContainingWindow(childRect).WorkingArea;
@@ -1132,7 +1177,7 @@ namespace FreshTools
                 const int SWP_SHOWWINDOW = 0x0040;
 
                 if (Handle != IntPtr.Zero)
-                {
+                {                                                                                               
                     return SetWindowPos(Handle, 0, Rectangle.X, Rectangle.Y, Rectangle.Width, Rectangle.Height, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
                 }
                 return false;
