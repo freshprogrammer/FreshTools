@@ -785,7 +785,7 @@ namespace FreshTools
             int newW = (int)(snapAreas[snapIndex].Width * workingArea.Width);
             int newH = (int)(snapAreas[snapIndex].Height * workingArea.Height);
 
-            Log.V("SnapWindow(\"" + GetWindowText(handle) + "\"," + dir + ")  -> ("+newX+ "," + newY + "," + newW + "," + newH + ")");
+            Log.V("SnapWindow(\"" + GetWindowText(handle) + "\"," + dir + ")  -> (" + newX + "," + newY + "," + newW + "," + newH + ") - snapIndex:" + snapIndex + " was at relative " + relativeRectangle +"");
 
 
             MoveWindowTo(handle, newX, newY, newW, newH);

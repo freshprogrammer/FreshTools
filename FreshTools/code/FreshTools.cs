@@ -25,7 +25,7 @@ namespace FreshTools
         {
             Thread.CurrentThread.Name = "FreshTools Thread";
             Log.Init();
-            Log.LogFileLogLevel = LogLevel.Verbose;
+            Log.LogFileLogLevel = LogLevel.Verbose; // maybe be a setting in the script file
             Log.ConsoleLogLevel = LogLevel.Verbose;
             LoadConfig();
 			UpdateRegistryForStartup();
