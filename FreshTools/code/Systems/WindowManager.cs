@@ -22,6 +22,12 @@ namespace FreshTools
         public const bool SnapHotKeysEnabled_Default = true;
         public const bool SnapAltHotKeysEnabled_Default = false;
         public const bool MiscHotKeysEnabled_Default = true;
+        public static string OffsetWindowTitles_WhiteList_String = "Google Chrome,Firefox"; //windows that wont use offset adjustment
+        public static string OffsetWindowTitles_BlackList_String = "Microsoft Teams,Outlook,WhatsApp,Visual Studio,Excel,Word,Slack"; //windows that will use offset adjustment
+
+        private static string[] OffsetWindowTitles_WhiteList;
+        private static string[] OffsetWindowTitles_BlackList;
+
         public static bool SnapHotKeysEnabled { get { return snapHotKeysEnabled; } set { if (value)EnableSnapHotKeys(); else DisableSnapHotKeys(); } }
         public static bool SnapAltHotKeysEnabled { get { return snapAltHotKeysEnabled; } set { if (value)EnableSnapAltHotKeys(); else DisableSnapAltHotKeys(); } }
         public static bool MiscHotKeysEnabled { get { return miscHotKeysEnabled; } set { if (value)EnableMiscHotKeys(); else DisableMiscHotKeys(); } }
@@ -214,6 +220,17 @@ namespace FreshTools
             }
         }
 
+        public static void SaveTitleLists(VariablesFile settingsFile)
+        {
+            string whiteList = WindowManager.OffsetWindowTitles_WhiteList_String;
+            WindowManager.OffsetWindowTitles_WhiteList_String = settingsFile.variables.GetVariable("WindowTitleOffset_Whitelist", ref whiteList, true).String;
+            string blackList = WindowManager.OffsetWindowTitles_BlackList_String;
+            WindowManager.OffsetWindowTitles_BlackList_String = settingsFile.variables.GetVariable("WindowTitleOffset_Blacklist", ref blackList, true).String;
+
+            OffsetWindowTitles_WhiteList = OffsetWindowTitles_WhiteList_String.Split(',');
+            OffsetWindowTitles_BlackList = OffsetWindowTitles_BlackList_String.Split(',');
+        }
+
         public static void LoadHotKeys(VariablesFile settingsFile)
         {
             //modifiers |=NoRepeat, #=Windows, !=Alt, ^=Ctrl, +=Shift
@@ -295,7 +312,7 @@ namespace FreshTools
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_DecreaseWindowTransparency", "^!Subtract").String, out hk))
                 miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, DecreaseWindowTransparency));
             if (HotKey.TryParseHotKey(settingsFile.variables.GetVariable("HotKey_SendActiveWindowToBack", "|^!W").String, out hk))
-                miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SendActiveWindowToBack));
+                miscHotKeys.Add(new HotKey(hk.Modifiers, hk.Key, SendWindowToBack));
 
 
             //run enablers
@@ -474,22 +491,21 @@ namespace FreshTools
         #region Move Window Between screens
         public static void MoveActiveWindowToRightScreen(object o, HotKeyEventArgs args)
         {
-            MoveActiveWindowOffScreenInDirection(new Point(1,0));
+            MoveWindowOffScreenInDirection(GetForegroundWindow(), new Point(1,0));
         }
 
         public static void MoveActiveWindowToLeftScreen(object o, HotKeyEventArgs args)
         {
-            MoveActiveWindowOffScreenInDirection(new Point(-1,0));
+            MoveWindowOffScreenInDirection(GetForegroundWindow(), new Point(-1,0));
         }
 
         /// <summary>
         /// Move this window off this screen in the given direction eg (1,0) for right.
         /// </summary>
         /// <param name="dir">Direction to move window in units of the active screens' resolution.</param>
-        public static void MoveActiveWindowOffScreenInDirection(Point dir)
+        public static void MoveWindowOffScreenInDirection(IntPtr handle, Point dir)
         {
             if(Screen.AllScreens.Length==1)return;
-            IntPtr handle = GetForegroundWindow();
             Rect rect = new Rect();
             GetWindowRect(handle, ref rect);
             Rectangle childRect = rect.ToRectangle();
@@ -515,16 +531,16 @@ namespace FreshTools
                 }
             }
 
-            MoveActiveWindowToScreen(newScreen);
+            Log.V("MoveWindowOffScreenInDirection(\"" + GetWindowText(handle) + "\"," + dir + ")");
+            MoveWindowToScreen(handle, newScreen);
         }
 
         /// <summary>
         /// Move window to new screen and scale it as necisarry
         /// </summary>
         /// <param name="newScreen"></param>
-        public static void MoveActiveWindowToScreen(Screen newScreen)
+        public static void MoveWindowToScreen(IntPtr handle, Screen newScreen)
         {
-            IntPtr handle = GetForegroundWindow();
             Rect rect = new Rect();
             GetWindowRect(handle, ref rect);
             Rectangle childRect = rect.ToRectangle();
@@ -548,10 +564,10 @@ namespace FreshTools
                 int newHeight = (int)(newScreen.WorkingArea.Height * heightPercentage);
                 newWidth += resizeOffset.X;
                 newHeight += resizeOffset.Y;
-                MoveActiveWindowTo(newX, newY, newWidth, newHeight, false);
+                MoveWindowTo(handle, newX, newY, newWidth, newHeight, false);
             }
             else
-                MoveActiveWindowTo(newX, newY, false);
+                MoveWindowTo(handle, newX, newY, false);
 
         }
 
@@ -568,20 +584,27 @@ namespace FreshTools
         public static Point GetOffsetForWindowByTitle(string title, bool position)
         {
             //need to use regular 7p offset for certain applications and no offset for other. Seems to be new/microsoft application that use a new window backend. very anoying
-            bool useOffset = true;
-            if (!title.Contains("Google Chrome") && !title.Contains("Firefox")) // ignore sub titles from web browsers
+            bool whiteListed = false;
+            foreach (var titlePart in OffsetWindowTitles_WhiteList)// ignore sub titles from web browsers
             {
-                if (title.Contains("Microsoft Teams")) useOffset = false;
-                else if (title.Contains("Outlook")) useOffset = false;
-                else if (title.Contains("WhatsApp")) useOffset = false;
-                else if (title.Contains("Visual Studio")) useOffset = false;
-                else if (title.Contains("Excel")) useOffset = false;
-                else if (title.Contains("Word")) useOffset = false;
-                else if (title.Contains("Slack")) useOffset = false;
+                if (title.Contains(titlePart))
+                {
+                    whiteListed = true;
+                    break;
+                }
+            }
+            bool blackListed = false;
+            foreach (var titlePart in OffsetWindowTitles_BlackList)
+            {
+                if (title.Contains(titlePart))
+                {
+                    blackListed = true;
+                    break;
+                }
             }
 
-            Log.V("GetOffsetForWindowByTitle(\""+ title + "\","+ position + ")  UseOffset = " + useOffset);
-
+            bool useOffset = whiteListed || !blackListed;
+            
             if (position)
                 if (useOffset) return positionOffsetMain;
                 else return new Point(0, 0);
@@ -593,12 +616,11 @@ namespace FreshTools
         #endregion
 
         #region Window movement & snap (control) logic
-        public static void MoveActiveWindowTo(int x, int y, bool includePosOffset = true)
+        public static void MoveWindowTo(IntPtr handle, int x, int y, bool includePosOffset = true)
         {
             const int cx = 0;
             const int cy = 0;
 
-            IntPtr handle = GetForegroundWindow();
             if (handle != IntPtr.Zero)
             {
                 if (includePosOffset)
@@ -608,14 +630,14 @@ namespace FreshTools
                     y += positionOffset.Y;
                 }
 
+                Log.V("MoveWindowTo(\"" + GetWindowText(handle) + "\"," + x + "," + y + ")");
                 SetWindowPos(handle, HWND_TOP, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
             }
         }
 
         //if moving window on same screen you need to offset its pos. If moving window between screens the x,y pos should already be know and not need to be re-offset
-        private static void MoveActiveWindowTo(int x, int y, int newWidth, int newHeight, bool includePosOffset=true)
+        private static void MoveWindowTo(IntPtr handle, int x, int y, int w, int h, bool includePosOffset=true)
         {
-            IntPtr handle = GetForegroundWindow();
             if (handle != IntPtr.Zero)
             {
                 if (includePosOffset)
@@ -625,20 +647,19 @@ namespace FreshTools
                     x += positionOffset.X;
                     y += positionOffset.Y;
 
-                    newWidth += resizeOffset.X;
-                    newHeight += resizeOffset.Y;
+                    w += resizeOffset.X;
+                    h += resizeOffset.Y;
                 }
 
+                Log.V("MoveWindowTo(\"" + GetWindowText(handle) + "\"," + x + "," + y + "," + w + "," + h + ")");
                 ShowWindow(handle, SW_SHOWNORMAL);
-                SetWindowPos(handle, HWND_TOP, x, y, newWidth, newHeight, SWP_NOZORDER | SWP_SHOWWINDOW);
+                SetWindowPos(handle, HWND_TOP, x, y, w, h, SWP_NOZORDER | SWP_SHOWWINDOW);
             }
         }
 
-        private static void SetWindowTransparency(int d)
+        private static void SetWindowTransparency(IntPtr handle, int d)
         {
             byte a;
-            IntPtr handle = GetForegroundWindow();
-
             if (lastWindowAlphaHandle == handle)
             {//new change to last window
                 if (d < 0)
@@ -669,19 +690,18 @@ namespace FreshTools
             lastWindowAlphaHandle = handle;
         }
 
-        private static void SendActiveWindowToBack()
+        private static void SendWindowToBack(IntPtr handle)
         {
-            IntPtr handle = GetForegroundWindow();
             if (handle != IntPtr.Zero)
             {
                 SetWindowPos(handle, HWND_BOTTOM, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW | SWP_NOACTIVATE);
             }
         }
 
-        private static void SnapActiveWindow(SnapDirection dir)
+        private static void SnapWindow(IntPtr handle, SnapDirection dir)
         {
-            RectangleF activeRelativeRectangle = GetActiveWindowRelativeRectangleF();
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
+            RectangleF relativeRectangle = GetWindowRelativeRectangleF(handle);
+            Rectangle workingArea = GetScreenWindowIsOn(handle).WorkingArea;
 
             RectangleF[] snapAreas = null;
             switch (dir)
@@ -753,7 +773,7 @@ namespace FreshTools
             int snapIndex = 0;
             for (int i = snapAreas.Length-2; i>=0 ; i--)
             {
-                if(CloseEnough(activeRelativeRectangle, snapAreas[i]))
+                if(CloseEnough(relativeRectangle, snapAreas[i]))
                 {
                     snapIndex = ++i;
                     break;
@@ -764,22 +784,25 @@ namespace FreshTools
             int newY = workingArea.Y + (int)(snapAreas[snapIndex].Y * workingArea.Height);
             int newW = (int)(snapAreas[snapIndex].Width * workingArea.Width);
             int newH = (int)(snapAreas[snapIndex].Height * workingArea.Height);
-            MoveActiveWindowTo(newX, newY, newW, newH);
+
+            Log.V("SnapWindow(\"" + GetWindowText(handle) + "\"," + dir + ")  -> ("+newX+ "," + newY + "," + newW + "," + newH + ")");
+
+
+            MoveWindowTo(handle, newX, newY, newW, newH);
         }
 
 
-        private static void MoveActiveWindowTo(SnapDirection dir)
+        private static void MoveWindowTo(IntPtr handle, SnapDirection dir)
         {
             //keep window size and move to a given corner or center
             if (!(dir == SnapDirection.TopLeft || dir == SnapDirection.TopRight || dir == SnapDirection.BottomLeft || dir == SnapDirection.BottomRight || dir == SnapDirection.Center))
                 return;
 
             Rect windowRect = new Rect();
-            IntPtr handle = GetForegroundWindow();
             GetWindowRect(handle, ref windowRect);
             Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));
             Point resizeOffset = GetResizeOffsetForWindowByTitle(GetWindowText(handle));
-            Rectangle workingArea = GetScreenActiveWindowIsOn().WorkingArea;
+            Rectangle workingArea = GetScreenWindowIsOn(handle).WorkingArea;
 
             float newX = workingArea.X;
             float newY = workingArea.Y;
@@ -797,7 +820,7 @@ namespace FreshTools
                 newY += workingArea.Height/2 - (windowRect.Height + resizeOffset.Y)/2;
             }
 
-            MoveActiveWindowTo((int)newX, (int)newY);
+            MoveWindowTo(handle, (int)newX, (int)newY);
         }
         #endregion
 
@@ -805,90 +828,90 @@ namespace FreshTools
         #region Snap active window screen to all 8 directions
         public static void SnapActiveWindowToTop(object o, HotKeyEventArgs args)
         {
-            SnapActiveWindow(SnapDirection.Top);
+            SnapWindow(GetForegroundWindow(), SnapDirection.Top);
         }
 
         public static void SnapActiveWindowToBottom(object o, HotKeyEventArgs args)
         {
-            SnapActiveWindow(SnapDirection.Bottom);
+            SnapWindow(GetForegroundWindow(), SnapDirection.Bottom);
         }
 
         public static void SnapActiveWindowToLeft(object o, HotKeyEventArgs args)
         {
-            SnapActiveWindow(SnapDirection.Left);
+            SnapWindow(GetForegroundWindow(), SnapDirection.Left);
         }
 
         public static void SnapActiveWindowToCenter(object o, HotKeyEventArgs args)
         {
-            SnapActiveWindow(SnapDirection.Center);
+            SnapWindow(GetForegroundWindow(), SnapDirection.Center);
         }
 
         public static void SnapActiveWindowToRight(object o, HotKeyEventArgs args)
         {
-            SnapActiveWindow(SnapDirection.Right);
+            SnapWindow(GetForegroundWindow(), SnapDirection.Right);
         }
 
         public static void SnapActiveWindowToTopLeft(object o, HotKeyEventArgs args)
         {
-            SnapActiveWindow(SnapDirection.TopLeft);
+            SnapWindow(GetForegroundWindow(), SnapDirection.TopLeft);
         }
 
         public static void SnapActiveWindowToTopRight(object o, HotKeyEventArgs args)
         {
-            SnapActiveWindow(SnapDirection.TopRight);
+            SnapWindow(GetForegroundWindow(), SnapDirection.TopRight);
         }
 
         public static void SnapActiveWindowToBottomLeft(object o, HotKeyEventArgs args)
         {
-            SnapActiveWindow(SnapDirection.BottomLeft);
+            SnapWindow(GetForegroundWindow(), SnapDirection.BottomLeft);
         }
 
         public static void SnapActiveWindowToBottomRight(object o, HotKeyEventArgs args)
         {
-            SnapActiveWindow(SnapDirection.BottomRight);
+            SnapWindow(GetForegroundWindow(), SnapDirection.BottomRight);
         }
         #endregion
 
         #region Move active window to all 4 corners & center
         public static void MoveActiveWindowToTopLeft(object o, HotKeyEventArgs args)
         {
-            MoveActiveWindowTo(SnapDirection.TopLeft);
+            MoveWindowTo(GetForegroundWindow(), SnapDirection.TopLeft);
         }
 
         public static void MoveActiveWindowToTopRight(object o, HotKeyEventArgs args)
         {
-            MoveActiveWindowTo(SnapDirection.TopRight);
+            MoveWindowTo(GetForegroundWindow(), SnapDirection.TopRight);
         }
 
         public static void MoveActiveWindowToBottomLeft(object o, HotKeyEventArgs args)
         {
-            MoveActiveWindowTo(SnapDirection.BottomLeft);
+            MoveWindowTo(GetForegroundWindow(), SnapDirection.BottomLeft);
         }
 
         public static void MoveActiveWindowToBottomRight(object o, HotKeyEventArgs args)
         {
-            MoveActiveWindowTo(SnapDirection.BottomRight);
+            MoveWindowTo(GetForegroundWindow(), SnapDirection.BottomRight);
         }
 
         public static void MoveActiveWindowToCenter(object o, HotKeyEventArgs args)
         {
-            MoveActiveWindowTo(SnapDirection.Center);
+            MoveWindowTo(GetForegroundWindow(), SnapDirection.Center);
         }
         #endregion
 
-        public static void SendActiveWindowToBack(object sender = null, HotKeyEventArgs e = null)
+        public static void SendWindowToBack(object sender = null, HotKeyEventArgs e = null)
         {
-            SendActiveWindowToBack();
+            SendWindowToBack(GetForegroundWindow());
         }
 
         public static void IncreaseWindowTransparency(object sender = null, HotKeyEventArgs e = null)
         {
-            SetWindowTransparency(1);
+            SetWindowTransparency(GetForegroundWindow(), 1);
         }
 
         public static void DecreaseWindowTransparency(object sender = null, HotKeyEventArgs e = null)
         {
-            SetWindowTransparency(-1);
+            SetWindowTransparency(GetForegroundWindow() , - 1);
         }
 
         public static void SaveLayout1(object sender = null, HotKeyEventArgs e = null)
@@ -924,12 +947,11 @@ namespace FreshTools
 
         #region Calculate Screen(s) info and Generics
         /// <summary>
-        /// Returns the screen containing the currently active window
+        /// Returns the screen containing the window
         /// </summary>
         /// <returns></returns>
-        public static Screen GetScreenActiveWindowIsOn()
+        public static Screen GetScreenWindowIsOn(IntPtr handle)
         {
-            IntPtr handle = GetForegroundWindow();
             Rect rect = new Rect();
             GetWindowRect(handle, ref rect);
             Rectangle childRect = rect.ToRectangle();
@@ -937,9 +959,8 @@ namespace FreshTools
             return GetScreenContainingWindow(childRect);
         }
 
-        public static RectangleF GetActiveWindowRelativeRectangleF()
+        public static RectangleF GetWindowRelativeRectangleF(IntPtr handle)
         {
-            IntPtr handle = GetForegroundWindow();
             Rect rect = new Rect();
             GetWindowRect(handle, ref rect);
             Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));

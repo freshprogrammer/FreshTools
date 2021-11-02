@@ -55,6 +55,7 @@ namespace FreshTools
             freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
             freshToolsNotifyIcon.Icon = freshToolsIcon;
             freshToolsNotifyIcon.DoubleClick += new EventHandler(this.IconDoubleClicked);
+            //freshToolsNotifyIcon.MouseClick += new MouseEventHandler(this.IconDoubleClicked);
 
             // Create all context menu items and add them to notification tray icon
             MenuItem windowManagerMenu = new MenuItem("Window Manager");
@@ -177,6 +178,7 @@ namespace FreshTools
             settingsFile.variables.SetValue("MiscWindowHotKeysEnabled", "" + WindowManager.MiscHotKeysEnabled);
 
             WindowManager.SaveSnapSizes(settingsFile);
+            WindowManager.SaveTitleLists(settingsFile);
             settingsFile.SaveAs(configFilePath);
 
             Log.I("Finisihed updating config");
