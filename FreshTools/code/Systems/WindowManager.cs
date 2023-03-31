@@ -7,6 +7,8 @@ using System.Text;
 using System.Windows.Forms;
 using System.IO;
 using System.Reflection;
+using System.Security.Cryptography;
+using System.Security.Policy;
 
 namespace FreshTools
 {
@@ -1256,7 +1258,13 @@ namespace FreshTools
 				}
 			}
 
-            public void SaveToDisk(int slot)
+            public byte[] SaveToDisk(int slot)
+            {
+                string fileName = LayoutSaveFileBaseName + slot + ".txt";
+                return SaveToDisk(fileName);
+            }
+
+            public byte[] SaveToDisk(string fileName)
             {
                 string saveData = "";
                 foreach (WindowInfo wi in WindowInfos)
@@ -1265,9 +1273,15 @@ namespace FreshTools
                 }
                 saveData.Trim();
 
-                string fileName = LayoutSaveFileBaseName + slot + ".txt";
                 Directory.CreateDirectory(Path.GetDirectoryName(fileName));
                 File.WriteAllText(fileName, saveData);
+
+                //return hash of this window layout to compare for changes
+                MD5 md5 = MD5.Create();
+                md5.Initialize();
+                md5.ComputeHash(Encoding.UTF8.GetBytes(saveData));
+                var hash = md5.Hash;
+                return hash;
             }
 
             public void LoadFromDisk(string path)
