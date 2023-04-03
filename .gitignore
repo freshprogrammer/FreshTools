@@ -60,6 +60,9 @@ dlldata.c
 # Chutzpah Test files
 _Chutzpah*
 
+# Visual Studio 2015/2017 cache/options directory
+.vs/
+
 # Visual C++ cache files
 ipch/
 *.aps
