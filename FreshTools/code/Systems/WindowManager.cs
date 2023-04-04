@@ -9,6 +9,8 @@ using System.IO;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Security.Policy;
+using System.Threading;
+using System.Xml.Linq;
 
 namespace FreshTools
 {
@@ -43,9 +45,16 @@ namespace FreshTools
         private static bool miscHotKeysEnabled = false;
 
         //window info for saving and restoring window possitions
-		private const int LAYOUT_COUNT = 4;//menu and hotkeys 1-3
+        private const int LAYOUT_MAX_SUPPORTED_MONITOR_COUNT = 6;// only supported up to 6? monitors
+        private const int LAYOUT_HOTKEY_COUNT = 3;
+        private const int LAYOUT_COUNT = 1 + LAYOUT_HOTKEY_COUNT + LAYOUT_MAX_SUPPORTED_MONITOR_COUNT;//menu and hotkeys 1-3 and 1 for each distinct monitor count
         private static Layout[] layouts = new Layout[LAYOUT_COUNT];
+        private static Layout backupLayout; // spare layout when a layout is loaded
+        private static Layout lastSavedLayout; // lastSavedLayout - used to compare if new one is different
         private static string LayoutSaveFileBaseName = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\windowLayouts\layout";
+        private static bool layoutSnapshotThreadRunning = true;// start by default
+        private static Thread layoutSnapshotThread;
+        private static int layoutSnapshotThread_sleepTime = 30*1000;
 
         //snap region sizes
         const int SnapSizeMaxCount = 9;
@@ -78,6 +87,61 @@ namespace FreshTools
             LoadSnapSizes();
             LoadLayoutsFromDisk();
         }
+
+        public static void Startup()
+        {
+            if (layoutSnapshotThreadRunning)
+                StartLayoutSnapshotThread();
+        }
+
+        public static void Teardown()
+        {
+            StopLayoutSnapshotThread();
+        }
+
+        public static void StartLayoutSnapshotThread()
+        {
+            layoutSnapshotThreadRunning = true;
+            if(layoutSnapshotThread==null)
+            {
+                Log.I("Layout Snapshot Thread Started - sleep " + layoutSnapshotThread_sleepTime);
+                layoutSnapshotThread = new Thread(new ThreadStart(LayoutSnapshotThreadRun));
+                layoutSnapshotThread.Start();
+            }
+            //startProcessItem.Text = "Stop Backup Thread";
+        }
+
+        public static void StopLayoutSnapshotThread()
+        {
+            layoutSnapshotThreadRunning = false;
+            Log.I("Backup Thread Stopped");
+            if (layoutSnapshotThread != null) layoutSnapshotThread.Interrupt();
+            layoutSnapshotThread = null;
+            //startProcessItem.Text = "Start Backup Thread";
+        }
+        
+        private static void LayoutSnapshotThreadRun()
+        {
+            int monitorCount = Screen.AllScreens.Length;
+            try
+            {
+                while (layoutSnapshotThreadRunning)
+                {
+                    if(monitorCount != Screen.AllScreens.Length)
+                    {//screen Count Changed - auto restore
+                        RestoreLayoutAuto();
+                        monitorCount = Screen.AllScreens.Length;
+                    }
+                    SaveLayoutAuto(layoutSnapshotThread);
+                    Thread.Sleep(layoutSnapshotThread_sleepTime);
+                }
+            }
+            catch (ThreadInterruptedException ex)
+            {
+                Log.E($"Caught ThreadInterruptedException - {ex}");
+            }
+        }
+
 
         public static void LoadSnapSizes(VariablesFile settingsFile=null)
         {
@@ -945,6 +1009,12 @@ namespace FreshTools
         {
             RestoreAllWindowPositions(3);
         }
+
+        public static void RestoreLayoutAuto(object sender = null, HotKeyEventArgs e = null)
+        {
+            int monitorCount = Screen.AllScreens.Length;
+            RestoreAllWindowPositions(LAYOUT_HOTKEY_COUNT + monitorCount, true);
+        }
         #endregion
 
         #region Calculate Screen(s) info and Generics
@@ -1127,6 +1197,12 @@ namespace FreshTools
         #endregion
 
         #region Save & Restore all window positions
+        public static void SaveLayoutAuto(object sender = null, EventArgs e = null)
+        {
+            //called from snapshot Thread
+            SaveAllWindowPositions(-1);
+        }
+
         public static void SaveLayout0(object sender = null, EventArgs e = null)
         {
 			//called from menu - save to layout 0
@@ -1135,19 +1211,56 @@ namespace FreshTools
 
         public static void RestoreLayout0(object sender = null, EventArgs e = null)
         {
-			//called from menu - save to layout 0
+            //called from menu - save to layout 0
             RestoreAllWindowPositions(0);
+        }
+
+        public static void RestoreBackupLayout(object sender = null, EventArgs e = null)
+        {
+            RestoreAllWindowPositionsFromBackup();
         }
 
         public static void SaveAllWindowPositions(int saveSlot)
         {
-			if(saveSlot<LAYOUT_COUNT)
+            bool autoMode = false;
+            bool validSave = true; // false if auto and duplicate
+            int screenCount = 0;
+            if (saveSlot == -1)// auto mode
             {
-                layouts[saveSlot].Capture();
-                layouts[saveSlot].SaveToDisk(saveSlot);
-                Log.I("Saved " + layouts[saveSlot].WindowCount + " window positions to slot#" + saveSlot);
-                FreshTools.GetNotifyIcon().ShowBalloonTip(750, "FreshTools", layouts[saveSlot].WindowCount + " Windows saved to layout#" + saveSlot, ToolTipIcon.None);
-			}
+                autoMode = true;
+                screenCount = Screen.AllScreens.Length;
+                if (screenCount > LAYOUT_MAX_SUPPORTED_MONITOR_COUNT) return;
+                saveSlot = LAYOUT_HOTKEY_COUNT + screenCount;
+
+
+            }
+            if (saveSlot < LAYOUT_COUNT && validSave)
+            {
+
+                Layout newSnapshot = new Layout();
+                newSnapshot.Capture();
+                if (!autoMode || lastSavedLayout == null || !lastSavedLayout.Equals(newSnapshot) )
+                {
+                    layouts[saveSlot] = newSnapshot;
+                    layouts[saveSlot].SaveToDisk(saveSlot, autoMode, screenCount);
+                    var slotName = "to slot#" + saveSlot;
+                    if (autoMode)
+                        slotName = "for " + (saveSlot - LAYOUT_HOTKEY_COUNT) + " monitors [" + saveSlot + "]";
+
+                    Log.I("Saved " + layouts[saveSlot].WindowCount + " window positions " + slotName + " autoMode=" + (autoMode ? "True" : "False"));
+                    if (!autoMode)
+                    {
+                        var notifyIcon = FreshTools.GetNotifyIcon();
+                        if (notifyIcon != null) notifyIcon.ShowBalloonTip(750, "FreshTools", layouts[saveSlot].WindowCount + " Windows saved to layout#" + saveSlot, ToolTipIcon.None);
+                    }
+                }
+                else
+                {
+                    //Log.I("Didn't save layout - no change");
+                }
+
+                lastSavedLayout = layouts[saveSlot];
+            }
         }
 
         public static void LoadLayoutsFromDisk()
@@ -1159,14 +1272,37 @@ namespace FreshTools
             }
         }
 
-        public static void RestoreAllWindowPositions(int saveSlot)
+        public static void RestoreAllWindowPositions(int saveSlot, bool autoMode = false)
         {
-			if(saveSlot<LAYOUT_COUNT)
+            if (saveSlot < LAYOUT_COUNT && layouts[saveSlot] != null)
             {
-				layouts[saveSlot].Restore();
-                Log.I("Restored " + layouts[saveSlot].WindowCount + " window positions from slot#" + saveSlot);
-                FreshTools.GetNotifyIcon().ShowBalloonTip(75, "FreshTools", layouts[saveSlot].WindowCount + " Windows restored from layout#" + saveSlot, ToolTipIcon.None);
-			}
+                backupLayout = new Layout();
+                backupLayout.Capture();
+
+                int restoreCount = layouts[saveSlot].Restore();
+                string slotName = "slot#" + saveSlot;
+                if (autoMode)
+                    slotName = "Auto backup for " + (saveSlot - LAYOUT_HOTKEY_COUNT) + " monitors";
+                Log.I("Restored " + restoreCount + " window positions from " + slotName);
+                FreshTools.GetNotifyIcon().ShowBalloonTip(75, "FreshTools", restoreCount + " Windows restored from " + slotName, ToolTipIcon.None);
+            }
+        }
+
+        public static void RestoreAllWindowPositionsFromBackup()
+        {
+            if (backupLayout != null)
+            {
+                Layout tempBackupLayout = new Layout();
+                tempBackupLayout.Capture();
+
+                int restoreCount = backupLayout.Restore();
+                string slotName = "backup layout";
+                Log.I("Restored " + restoreCount + " window positions from " + slotName);
+                FreshTools.GetNotifyIcon().ShowBalloonTip(75, "FreshTools", restoreCount + " Windows restored from " + slotName, ToolTipIcon.None);
+
+                if(restoreCount!=0)
+                    backupLayout = tempBackupLayout;
+            }
         }
 
         private class WindowInfo
@@ -1233,6 +1369,16 @@ namespace FreshTools
             {
                 return "WindowInfo() - " + Text + " {" + Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "}";
             }
+
+            public override bool Equals(Object obj)
+            {
+                if (!(obj is WindowInfo)) return false;
+
+                WindowInfo other = obj as WindowInfo;
+                if (!Handle.Equals(other.Handle)) return false;
+
+                return Rectangle.Equals(other.Rectangle);
+            }
         }
 		
 		//stores all window possitions
@@ -1255,16 +1401,18 @@ namespace FreshTools
 				{
 					WindowInfo wInfo = new WindowInfo(w);
 					WindowInfos.Add(wInfo);
-				}
-			}
-
-            public byte[] SaveToDisk(int slot)
-            {
-                string fileName = LayoutSaveFileBaseName + slot + ".txt";
-                return SaveToDisk(fileName);
+                }
             }
 
-            public byte[] SaveToDisk(string fileName)
+            public void SaveToDisk(int slot, bool autoMode=false, int screenCount=0)
+            {
+                string fileName = LayoutSaveFileBaseName + slot + ".txt";
+                if (autoMode)
+                    fileName = LayoutSaveFileBaseName + "_Snapshot_"+ screenCount+"Monitors" + ".txt"; ;
+                SaveToDisk(fileName);
+            }
+
+            public void SaveToDisk(string fileName)
             {
                 string saveData = "";
                 foreach (WindowInfo wi in WindowInfos)
@@ -1275,13 +1423,6 @@ namespace FreshTools
 
                 Directory.CreateDirectory(Path.GetDirectoryName(fileName));
                 File.WriteAllText(fileName, saveData);
-
-                //return hash of this window layout to compare for changes
-                MD5 md5 = MD5.Create();
-                md5.Initialize();
-                md5.ComputeHash(Encoding.UTF8.GetBytes(saveData));
-                var hash = md5.Hash;
-                return hash;
             }
 
             public void LoadFromDisk(string path)
@@ -1328,7 +1469,7 @@ namespace FreshTools
                 }
             }
 			
-			public void Restore()
+			public int Restore()
 			{
 				int successCount = 0;
 				foreach (WindowInfo i in WindowInfos)
@@ -1336,8 +1477,24 @@ namespace FreshTools
 					if (i.RestorePosition())
 						successCount++;
 				}
+                return successCount;
 			}
-		}
+
+            public override bool Equals(Object obj)
+            {
+                if (!(obj is Layout)) return false;
+
+                Layout other = obj as Layout;
+                if (other.WindowCount != WindowCount) return false;
+
+
+                for (var i = 0; i < WindowInfos.Count; i++)
+                {
+                    if (!WindowInfos[i].Equals(other.WindowInfos[i])) return false;
+                }
+                return true;
+            }
+        }
         #endregion
 
         private enum SnapDirection

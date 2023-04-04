@@ -39,6 +39,8 @@ namespace FreshTools
             if(MouseVolumeControlEnabled)
                 StartVolumeMouseListener();
 
+            WindowManager.Startup();
+
             Log.I("FreshTools started sucsessfully");
         }
 
@@ -73,9 +75,13 @@ namespace FreshTools
             windowManagerMenu.MenuItems.Add(windowManagerSnapHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerSnapAltHotKeysEnabledMenuItem);
             windowManagerMenu.MenuItems.Add(windowManagerMiscHotKeysEnabledMenuItem);
+            //windowManagerMenu.MenuItems.Add(new MenuItem("-"));
+            //windowManagerMenu.MenuItems.Add(new MenuItem("Restore Window Layout Monitors (Auto)", WindowManager.RestoreLayoutForMonitors_Auto));
             windowManagerMenu.MenuItems.Add(new MenuItem("-"));
             windowManagerMenu.MenuItems.Add(new MenuItem("Save Window Layout",WindowManager.SaveLayout0));
-            windowManagerMenu.MenuItems.Add(new MenuItem("Restore Window Layout",WindowManager.RestoreLayout0));
+            windowManagerMenu.MenuItems.Add(new MenuItem("Restore Window Layout", WindowManager.RestoreLayout0));
+            windowManagerMenu.MenuItems.Add(new MenuItem("-"));
+            windowManagerMenu.MenuItems.Add(new MenuItem("Restore Backup Layout", WindowManager.RestoreBackupLayout));
 
             MenuItem settingsMenu = new MenuItem("Settings");
 
@@ -255,6 +261,7 @@ namespace FreshTools
             Log.I("quitMenuItem_Click()");
             freshToolsNotifyIcon.Dispose();
             SaveConfig();
+            WindowManager.Teardown();
             Application.Exit();
         }
         #endregion
