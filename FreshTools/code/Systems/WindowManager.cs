@@ -11,6 +11,7 @@ using System.Security.Cryptography;
 using System.Security.Policy;
 using System.Threading;
 using System.Xml.Linq;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace FreshTools
 {
@@ -54,7 +55,7 @@ namespace FreshTools
         private static string LayoutSaveFileBaseName = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + @"\" + Assembly.GetExecutingAssembly().GetName().Name + @"\windowLayouts\layout";
         private static bool layoutSnapshotThreadRunning = true;// start by default
         private static Thread layoutSnapshotThread;
-        private static int layoutSnapshotThread_sleepTime = 30*1000;
+        private static int layoutSnapshotThread_sleepTime = 3*1000;
 
         //snap region sizes
         const int SnapSizeMaxCount = 9;
@@ -1335,16 +1336,52 @@ namespace FreshTools
                 const short SWP_NOZORDER = 0X4;
                 const int SWP_SHOWWINDOW = 0x0040;
 
+                bool worked = false;
                 if (Handle != IntPtr.Zero)
                 {                                                                                               
-                    return SetWindowPos(Handle, 0, Rectangle.X, Rectangle.Y, Rectangle.Width, Rectangle.Height, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                    worked = SetWindowPos(Handle, 0, Rectangle.X, Rectangle.Y, Rectangle.Width, Rectangle.Height, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                    if (!worked)
+                    {// try to find the correct handle again 
+                        RefreshHandle();
+                        worked = SetWindowPos(Handle, 0, Rectangle.X, Rectangle.Y, Rectangle.Width, Rectangle.Height, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
+                    }
                 }
-                return false;
+                return worked;
             }
 
             public string SaveString()
             {
                 return Rectangle.X + "," + Rectangle.Y + "," + Rectangle.Width + "," + Rectangle.Height + "," + Text;
+            }
+
+            public IntPtr RefreshHandle()
+            {
+                int matches = 0;
+                IntPtr handle = IntPtr.Zero;
+                var windows = WindowManager.FindWindowsWithText(Text);
+                foreach (IntPtr h in windows)
+                {
+                    string title = GetWindowText(h);
+                    if (title.Equals(Text))//test for exact match
+                    {
+                        handle = h;
+                        matches++;
+                    }
+                }
+
+                if (handle != IntPtr.Zero)//could be multiple matches
+                {
+                    Handle = handle;
+                }
+                else if (matches == 0)
+                {//failed exact match - try for partial match
+
+                }
+                else
+                {
+
+                }
+                return handle;
             }
 
             public static WindowInfo ParseSaveString(string data)
@@ -1438,31 +1475,10 @@ namespace FreshTools
                         WindowInfo wInfo = WindowInfo.ParseSaveString(s);
                         if (wInfo != null)
                         {
-                            int matches = 0;
-                            IntPtr handle = IntPtr.Zero;
-                            var windows = WindowManager.FindWindowsWithText(wInfo.Text);
-                            foreach (IntPtr h in windows)
+                            wInfo.RefreshHandle();
+                            if (wInfo.Handle != IntPtr.Zero)
                             {
-                                string title = GetWindowText(h);
-                                if(title.Equals(wInfo.Text))//test for exact match
-                                {
-                                    handle = h;
-                                    matches++;
-                                }
-                            }
-
-                            if (handle != IntPtr.Zero)//could be multiple matches
-                            {
-                                wInfo.Handle = handle;
                                 WindowInfos.Add(wInfo);
-                            }
-                            else if (matches == 0)
-                            {//failed exact match - try for partial match
-
-                            }
-                            else
-                            {
-
                             }
                         }
                     }

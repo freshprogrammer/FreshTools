@@ -51,7 +51,7 @@ namespace FreshTools
         {
             // Create notify icons and assign idle icon and show it
             freshToolsNotifyIcon = new NotifyIcon();
-            freshToolsNotifyIcon.Text = "Fresh Tools";
+            freshToolsNotifyIcon.Text = "Fresh Tools-debug";
 
             // Load icons from embeded resources
             freshToolsIcon = new Icon(Assembly.GetExecutingAssembly().GetManifestResourceStream("FreshTools.HDD_Idle.ico"));
