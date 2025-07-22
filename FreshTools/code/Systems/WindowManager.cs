@@ -12,6 +12,7 @@ using System.Security.Policy;
 using System.Threading;
 using System.Xml.Linq;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
+using System.Data;
 
 namespace FreshTools
 {
@@ -65,8 +66,12 @@ namespace FreshTools
         public static List<RectangleF> CenterSnapSizes;
 
         //these offsets are callibrated for my 2560x1440 monitors, not sure if they are the same on other resolutions or zoom levels
-        private static Point positionOffsetMain = new Point(-7, 0);
-        private static Point resizeOffsetMain = new Point(14, 7);
+        private static Point positionOffsetMain = new Point(-8, 0);
+        private static Point resizeOffsetMain = new Point(16, 8);
+        //private static Point positionOffsetMain = new Point(0, 0);
+        //private static Point resizeOffsetMain = new Point(0, 0);
+
+        private static bool usingNonStandardDPI = true; // set to true if using windows scaling other than normal %100
 
         //alpha control variables
         private static IntPtr lastWindowAlphaHandle = IntPtr.Zero;
@@ -486,6 +491,29 @@ namespace FreshTools
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         public static extern bool GetWindowRect(IntPtr hwnd, ref Rect Rect);
 
+        [DllImport("dwmapi.dll")]
+        static extern int DwmGetWindowAttribute(IntPtr hwnd, int dwAttribute, out Rect pvAttribute, int cbAttribute);
+        [Flags]
+        public enum DwmWindowAttribute : uint
+        {
+            DWMWA_NCRENDERING_ENABLED = 1,
+            DWMWA_NCRENDERING_POLICY,
+            DWMWA_TRANSITIONS_FORCEDISABLED,
+            DWMWA_ALLOW_NCPAINT,
+            DWMWA_CAPTION_BUTTON_BOUNDS,
+            DWMWA_NONCLIENT_RTL_LAYOUT,
+            DWMWA_FORCE_ICONIC_REPRESENTATION,
+            DWMWA_FLIP3D_POLICY,
+            DWMWA_EXTENDED_FRAME_BOUNDS,
+            DWMWA_HAS_ICONIC_BITMAP,
+            DWMWA_DISALLOW_PEEK,
+            DWMWA_EXCLUDED_FROM_PEEK,
+            DWMWA_CLOAK,
+            DWMWA_CLOAKED,
+            DWMWA_FREEZE_REPRESENTATION,
+            DWMWA_LAST
+        }
+
         [Serializable, StructLayout(LayoutKind.Sequential)]
         public struct Rect
         {
@@ -517,7 +545,7 @@ namespace FreshTools
         private const short HWND_TOPMOST = -1;
         [DllImport("user32.dll", EntryPoint = "SetWindowPos")]
         public static extern bool SetWindowPos(IntPtr hWnd, int hWndInsertAfter, int x, int Y, int cx, int cy, int wFlags);
-
+        
         //ShowWindow flags
         private const short SW_SHOWNORMAL = 1;
         [DllImport("user32.dll", EntryPoint = "ShowWindow")]
@@ -622,7 +650,7 @@ namespace FreshTools
             
             if (newScreen.WorkingArea.Width != currentScreen.WorkingArea.Width || newScreen.WorkingArea.Height != currentScreen.WorkingArea.Height)
             {
-                Point resizeOffset = GetResizeOffsetForWindowByTitle(GetWindowText(handle));
+                Point resizeOffset = GetOffsetForWindowByTitle(handle,false);
                 //different size working area/resolution
                 //scale window to new resolution
                 double widthPercentage = 1.0 * (rect.Width - resizeOffset.X) / currentWorkingArea.Width;
@@ -638,18 +666,9 @@ namespace FreshTools
 
         }
 
-        public static Point GetResizeOffsetForWindowByTitle(string title)
+        public static Point GetOffsetForWindowByTitle(IntPtr handle, bool position) /* position true for position offset, false for resize offset (usauly X*2,Y) */
         {
-            return GetOffsetForWindowByTitle(title, false);
-        }
-
-        public static Point GetPositionOffsetForWindowByTitle(string title)
-        {
-            return GetOffsetForWindowByTitle(title, true);
-        }
-
-        public static Point GetOffsetForWindowByTitle(string title, bool position)
-        {
+            string title = GetWindowText(handle);
             //need to use regular 7p offset for certain applications and no offset for other. Seems to be new/microsoft application that use a new window backend. very anoying
             bool whiteListed = false;
             foreach (var titlePart in OffsetWindowTitles_WhiteList)// ignore sub titles from web browsers
@@ -671,18 +690,54 @@ namespace FreshTools
             }
 
             bool useOffset = whiteListed || !blackListed;
-            
-            if (position)
-                if (useOffset) return positionOffsetMain;
-                else return new Point(0, 0);
-            else
-                if (useOffset) return resizeOffsetMain;
-                else return new Point(0, 0);
+
+            if (usingNonStandardDPI)// --  hard coded method
+            {
+                if (useOffset)
+                    if (position) return positionOffsetMain;
+                    else return resizeOffsetMain;
+                else
+                    return new Point(0, 0);
+            }
+            else // calculation of window shadow offset - broken with 
+            {
+                if (useOffset)
+                {
+                    Rect offset = CalcFakeWindowsBorder(handle);
+                    if (position)
+                        return new Point(offset.Left * -1, offset.Top * -1); // always should be negative? to account for windows phantom shadow
+                    else
+                        return new Point(offset.Left + offset.Right, offset.Top + offset.Bottom);
+                }
+                else
+                    return new Point(0, 0);
+            }
         }
 
-        #endregion
+#endregion
 
         #region Window movement & snap (control) logic
+        // calculate for windows phantom shadow - this doest work on scaled displays since DwmGetWindowAttribute return real physical cords and GetWindowRect returns scaled values
+        public static Rect CalcFakeWindowsBorder(IntPtr handle)
+        {
+            Rect rect = new Rect();
+            Rect frame = new Rect();
+            GetWindowRect(handle, ref rect);
+            int size = Marshal.SizeOf(typeof(Rect));
+            DwmGetWindowAttribute(handle, (int)DwmWindowAttribute.DWMWA_EXTENDED_FRAME_BOUNDS, out frame, size);
+
+            //rect should be `0, 0, 1280, 1024`
+            //frame should be `7, 0, 1273, 1017`
+
+            Rect border = new Rect();
+            border.Left = frame.Left - rect.Left;
+            border.Top = frame.Top - rect.Top;
+            border.Right = rect.Right - frame.Right;
+            border.Bottom = rect.Bottom - frame.Bottom;
+
+            return border;
+        }
+
         public static void MoveWindowTo(IntPtr handle, int x, int y, bool includePosOffset = true)
         {
             const int cx = 0;
@@ -692,11 +747,10 @@ namespace FreshTools
             {
                 if (includePosOffset)
                 {
-                    Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));
+                    Point positionOffset = GetOffsetForWindowByTitle(handle, true);
                     x += positionOffset.X;
                     y += positionOffset.Y;
                 }
-
                 Log.V("MoveWindowTo(\"" + GetWindowText(handle) + "\"," + x + "," + y + ")");
                 SetWindowPos(handle, HWND_TOP, x, y, cx, cy, SWP_NOZORDER | SWP_NOSIZE | SWP_SHOWWINDOW);
             }
@@ -709,8 +763,8 @@ namespace FreshTools
             {
                 if (includePosOffset)
                 {
-                    Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));
-                    Point resizeOffset = GetResizeOffsetForWindowByTitle(GetWindowText(handle));
+                    Point positionOffset = GetOffsetForWindowByTitle(handle, true);
+                    Point resizeOffset = GetOffsetForWindowByTitle(handle, false);
                     x += positionOffset.X;
                     y += positionOffset.Y;
 
@@ -718,7 +772,6 @@ namespace FreshTools
                     h += resizeOffset.Y;
                 }
 
-                Log.V("MoveWindowTo(\"" + GetWindowText(handle) + "\"," + x + "," + y + "," + w + "," + h + ")");
                 ShowWindow(handle, SW_SHOWNORMAL);
                 SetWindowPos(handle, HWND_TOP, x, y, w, h, SWP_NOZORDER | SWP_SHOWWINDOW);
             }
@@ -867,8 +920,8 @@ namespace FreshTools
 
             Rect windowRect = new Rect();
             GetWindowRect(handle, ref windowRect);
-            Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));
-            Point resizeOffset = GetResizeOffsetForWindowByTitle(GetWindowText(handle));
+            Point positionOffset = GetOffsetForWindowByTitle(handle,true);
+            Point resizeOffset = GetOffsetForWindowByTitle(handle, false);
             Rectangle workingArea = GetScreenWindowIsOn(handle).WorkingArea;
 
             float newX = workingArea.X;
@@ -1036,8 +1089,8 @@ namespace FreshTools
         {
             Rect rect = new Rect();
             GetWindowRect(handle, ref rect);
-            Point positionOffset = GetPositionOffsetForWindowByTitle(GetWindowText(handle));
-            Point resizeOffset = GetResizeOffsetForWindowByTitle(GetWindowText(handle));
+            Point positionOffset = GetOffsetForWindowByTitle(handle, true);
+            Point resizeOffset = GetOffsetForWindowByTitle(handle, false);
             Rectangle childRect = rect.ToRectangle();
 
             Rectangle workingSpace = GetScreenContainingWindow(childRect).WorkingArea;
@@ -1331,11 +1384,6 @@ namespace FreshTools
 
             public bool RestorePosition()
             {
-                const short SWP_NOSIZE = 0;
-                //const short SWP_NOMOVE = 0X2;
-                const short SWP_NOZORDER = 0X4;
-                const int SWP_SHOWWINDOW = 0x0040;
-
                 bool worked = false;
                 if (Handle != IntPtr.Zero)
                 {                                                                                               
